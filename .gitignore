@@ -1,0 +1,56 @@
+./.idea
+# Ignore build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Auto-generated files
+*.nupkg
+*.snupkg
+*.sln.ide
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# DotCover
+*.dotCover
+
+# Backup & report files
+*_i.c
+*_p.c
+*_t.c
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+*.vspx
+*.vsix
+*.vsixmanifest
+*.vsmdi
+*.testsettings
+
+# Others
+*.sln.cache
+*.sln.ide
+*.vs/
