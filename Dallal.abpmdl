@@ -1,0 +1,105 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.1.0",
+      "isInstalled": true
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.1.0",
+      "isInstalled": true
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "Dallal.Application": {
+      "path": "src/Dallal.Application/Dallal.Application.abppkg",
+      "folder": "src"
+    },
+    "Dallal.Application.Tests": {
+      "path": "test/Dallal.Application.Tests/Dallal.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Dallal.Domain.Shared": {
+      "path": "src/Dallal.Domain.Shared/Dallal.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Dallal.Application.Contracts": {
+      "path": "src/Dallal.Application.Contracts/Dallal.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Dallal.HttpApi": {
+      "path": "src/Dallal.HttpApi/Dallal.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Dallal.HttpApi.Client": {
+      "path": "src/Dallal.HttpApi.Client/Dallal.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Dallal.Web": {
+      "path": "src/Dallal.Web/Dallal.Web.abppkg",
+      "folder": "src"
+    },
+    "Dallal.Web.Tests": {
+      "path": "test/Dallal.Web.Tests/Dallal.Web.Tests.abppkg",
+      "folder": "test"
+    },
+    "Dallal.EntityFrameworkCore.Tests": {
+      "path": "test/Dallal.EntityFrameworkCore.Tests/Dallal.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "Dallal.EntityFrameworkCore": {
+      "path": "src/Dallal.EntityFrameworkCore/Dallal.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "Dallal.TestBase": {
+      "path": "test/Dallal.TestBase/Dallal.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Dallal.Domain.Tests": {
+      "path": "test/Dallal.Domain.Tests/Dallal.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Dallal.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Dallal.HttpApi.Client.ConsoleTestApp/Dallal.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Dallal.DbMigrator": {
+      "path": "src/Dallal.DbMigrator/Dallal.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "Dallal.Domain": {
+      "path": "src/Dallal.Domain/Dallal.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
