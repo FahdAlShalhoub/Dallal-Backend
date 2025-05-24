@@ -1,4 +1,5 @@
-﻿using Dallal.Localization;
+﻿using System.Threading.Tasks;
+using Dallal.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Services;
@@ -9,10 +10,10 @@ namespace Dallal;
  */
 [ApiExplorerSettings(GroupName = "Customer")]
 [Authorize("Customer")]
-public abstract class DallalAppService : ApplicationService
+public class TestAppService : DallalAppService
 {
-    protected DallalAppService()
+    public Task<string> GetTestMessageAsync()
     {
-        LocalizationResource = typeof(DallalResource);
+        return Task.FromResult("Hello from TestAppService!");
     }
 }

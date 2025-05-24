@@ -5,6 +5,7 @@ using Dallal.Localization;
 using Dallal.MultiTenancy;
 using Dallal.Web.HealthChecks;
 using Dallal.Web.Menus;
+using Dallal.Web.Swagger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
@@ -136,7 +138,7 @@ public class DallalWebModule : AbpModule
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
-        ConfigureSwaggerServices(context.Services);
+        ConfigureSwaggerServices(context.Services, hostingEnvironment);
 
         Configure<PermissionManagementOptions>(options =>
         {
@@ -260,13 +262,56 @@ public class DallalWebModule : AbpModule
         });
     }
 
-    private void ConfigureSwaggerServices(IServiceCollection services)
+    private void ConfigureSwaggerServices(IServiceCollection services, IWebHostEnvironment env)
     {
         services.AddAbpSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Dallal API", Version = "v1" });
-            options.DocInclusionPredicate((docName, description) => true);
+            options.NonNullableReferenceTypesAsRequired();
+            options.SupportNonNullableReferenceTypes();
+            options.InferSecuritySchemes();
+            options.SwaggerDoc(
+                "v1Customer",
+                new OpenApiInfo { Title = "Customer API", Version = "v1Customer" }
+            );
+            options.SwaggerDoc(
+                "v1Broker",
+                new OpenApiInfo { Title = "Broker API", Version = "v1Broker" }
+            );
+            options.SwaggerDoc(
+                "v1Admin",
+                new OpenApiInfo { Title = "Admin API", Version = "v1Admin" }
+            );
+            options.DocInclusionPredicate(
+                (docName, description) =>
+                {
+                    if (description.GroupName == null)
+                        return false;
+
+                    if (docName == "v1Admin" && description.GroupName.Contains("Admin"))
+                        return true;
+
+                    if (docName == "v1Broker" && description.GroupName.Contains("Broker"))
+                        return true;
+
+                    if (docName == "v1Customer" && description.GroupName.Contains("Customer"))
+                        return true;
+
+                    return false;
+                }
+            );
             options.CustomSchemaIds(type => type.FullName);
+
+            options.AddSecurityDefinition(
+                "token",
+                new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    In = ParameterLocation.Header,
+                    Name = HeaderNames.Authorization,
+                    Scheme = "Bearer",
+                }
+            );
+            options.OperationFilter<SecureEndpointAuthRequirementFilter>();
         });
     }
 
@@ -306,7 +351,17 @@ public class DallalWebModule : AbpModule
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
-        app.UseSwagger();
+        if (env.IsDevelopment())
+        // if (true)
+        {
+            app.UseSwagger();
+            app.UseAbpSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1Customer/swagger.json", "Customer API");
+                options.SwaggerEndpoint("/swagger/v1Broker/swagger.json", "Broker API");
+                options.SwaggerEndpoint("/swagger/v1Admin/swagger.json", "Admin API");
+            });
+        }
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Dallal API");
