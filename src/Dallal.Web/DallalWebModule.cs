@@ -3,6 +3,7 @@ using System.IO;
 using Dallal.EntityFrameworkCore;
 using Dallal.Localization;
 using Dallal.MultiTenancy;
+using Dallal.Web.Auth;
 using Dallal.Web.HealthChecks;
 using Dallal.Web.Menus;
 using Dallal.Web.Swagger;
@@ -33,6 +34,7 @@ using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
+using Volo.Abp.OpenIddict.ExtensionGrantTypes;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.Studio.Client.AspNetCore;
@@ -84,6 +86,17 @@ public class DallalWebModule : AbpModule
                 options.AddAudiences("Dallal");
                 options.UseLocalServer();
                 options.UseAspNetCore();
+            });
+        });
+
+        PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
+        {
+            serverBuilder.Configure(openIddictServerOptions =>
+            {
+                openIddictServerOptions.GrantTypes.Add(
+                    PhoneNumberExtensionGrant.ExtensionGrantName
+                );
+                openIddictServerOptions.GrantTypes.Add(EmailOtpExtensionGrant.ExtensionGrantName);
             });
         });
 
@@ -182,6 +195,17 @@ public class DallalWebModule : AbpModule
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;
+        });
+        Configure<AbpOpenIddictExtensionGrantsOptions>(options =>
+        {
+            options.Grants.Add(
+                PhoneNumberExtensionGrant.ExtensionGrantName,
+                new PhoneNumberExtensionGrant()
+            );
+            options.Grants.Add(
+                EmailOtpExtensionGrant.ExtensionGrantName,
+                new EmailOtpExtensionGrant()
+            );
         });
     }
 

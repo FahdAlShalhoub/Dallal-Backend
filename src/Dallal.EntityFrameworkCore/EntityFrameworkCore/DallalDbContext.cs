@@ -1,3 +1,5 @@
+using Dallal.Identity;
+using Dallal.Otps;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -9,9 +11,9 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
+using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 
@@ -20,10 +22,10 @@ namespace Dallal.EntityFrameworkCore;
 [ReplaceDbContext(typeof(IIdentityDbContext))]
 [ReplaceDbContext(typeof(ITenantManagementDbContext))]
 [ConnectionStringName("Default")]
-public class DallalDbContext :
-    AbpDbContext<DallalDbContext>,
-    ITenantManagementDbContext,
-    IIdentityDbContext
+public class DallalDbContext
+    : AbpDbContext<DallalDbContext>,
+        ITenantManagementDbContext,
+        IIdentityDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
 
@@ -55,13 +57,14 @@ public class DallalDbContext :
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
 
+    public DbSet<Otp> Otps { get; set; } = default!;
+    public DbSet<CustomerIdentity> CustomerIdentities { get; set; } = default!;
+    public DbSet<BrokerIdentity> BrokerIdentities { get; set; } = default!;
+
     #endregion
 
     public DallalDbContext(DbContextOptions<DallalDbContext> options)
-        : base(options)
-    {
-
-    }
+        : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -78,7 +81,7 @@ public class DallalDbContext :
         builder.ConfigureOpenIddict();
         builder.ConfigureTenantManagement();
         builder.ConfigureBlobStoring();
-        
+
         /* Configure your own tables/entities inside here */
 
         //builder.Entity<YourEntity>(b =>

@@ -1,14 +1,10 @@
 ﻿using Dallal.Localization;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Services;
 
 namespace Dallal;
 
 /* Inherit your application services from this class.
  */
-[ApiExplorerSettings(GroupName = "Customer")]
-[Authorize("Customer")]
 public abstract class DallalAppService : ApplicationService
 {
     protected DallalAppService()
