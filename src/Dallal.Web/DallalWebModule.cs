@@ -1,55 +1,44 @@
+using System;
 using System.IO;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Dallal.EntityFrameworkCore;
 using Dallal.Localization;
 using Dallal.MultiTenancy;
-using Dallal.Permissions;
-using Dallal.Web.Menus;
 using Dallal.Web.HealthChecks;
+using Dallal.Web.Menus;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Volo.Abp;
-using Volo.Abp.Studio;
-using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
-using Volo.Abp.Autofac;
-using Volo.Abp.AutoMapper;
-using Volo.Abp.Modularity;
-using Volo.Abp.PermissionManagement;
-using Volo.Abp.PermissionManagement.Web;
-using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.UI;
-using Volo.Abp.UI.Navigation;
-using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.Identity.Web;
-using Volo.Abp.FeatureManagement;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
-using Volo.Abp.TenantManagement.Web;
-using System;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Extensions.DependencyInjection;
+using Volo.Abp;
 using Volo.Abp.Account.Web;
+using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.AspNetCore.Serilog;
-using Volo.Abp.Identity;
-using Volo.Abp.Swashbuckle;
+using Volo.Abp.Autofac;
+using Volo.Abp.AutoMapper;
+using Volo.Abp.FeatureManagement;
+using Volo.Abp.Identity.Web;
+using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
-using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Studio.Client.AspNetCore;
+using Volo.Abp.Swashbuckle;
+using Volo.Abp.TenantManagement.Web;
+using Volo.Abp.UI.Navigation;
+using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.VirtualFileSystem;
 
 namespace Dallal.Web;
 
@@ -105,7 +94,10 @@ public class DallalWebModule : AbpModule
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                serverBuilder.AddProductionEncryptionAndSigningCertificate(
+                    "openiddict.pfx",
+                    configuration["AuthServer:CertificatePassPhrase"]!
+                );
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
@@ -119,7 +111,8 @@ public class DallalWebModule : AbpModule
         if (!configuration.GetValue<bool>("App:DisablePII"))
         {
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
-            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact =
+                true;
         }
 
         if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
@@ -128,14 +121,14 @@ public class DallalWebModule : AbpModule
             {
                 options.DisableTransportSecurityRequirement = true;
             });
-            
+
             Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
             });
         }
 
-        ConfigureBundles();
+        // ConfigureBundles();
         ConfigureUrls(configuration);
         ConfigureHealthChecks(context);
         ConfigureAuthentication(context);
@@ -150,7 +143,6 @@ public class DallalWebModule : AbpModule
             options.IsDynamicPermissionStoreEnabled = true;
         });
     }
-
 
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
@@ -182,7 +174,9 @@ public class DallalWebModule : AbpModule
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
-        context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+        context.Services.ForwardIdentityAuthenticationForBearer(
+            OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme
+        );
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;
@@ -205,12 +199,42 @@ public class DallalWebModule : AbpModule
 
             if (hostingEnvironment.IsDevelopment())
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Dallal.Domain.Shared", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Dallal.Domain", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Dallal.Application.Contracts", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Dallal.Application", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalHttpApiModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Dallal.HttpApi", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<DallalWebModule>(hostingEnvironment.ContentRootPath);
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalDomainSharedModule>(
+                    Path.Combine(
+                        hostingEnvironment.ContentRootPath,
+                        string.Format("..{0}Dallal.Domain.Shared", Path.DirectorySeparatorChar)
+                    )
+                );
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalDomainModule>(
+                    Path.Combine(
+                        hostingEnvironment.ContentRootPath,
+                        string.Format("..{0}Dallal.Domain", Path.DirectorySeparatorChar)
+                    )
+                );
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalApplicationContractsModule>(
+                    Path.Combine(
+                        hostingEnvironment.ContentRootPath,
+                        string.Format(
+                            "..{0}Dallal.Application.Contracts",
+                            Path.DirectorySeparatorChar
+                        )
+                    )
+                );
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalApplicationModule>(
+                    Path.Combine(
+                        hostingEnvironment.ContentRootPath,
+                        string.Format("..{0}Dallal.Application", Path.DirectorySeparatorChar)
+                    )
+                );
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalHttpApiModule>(
+                    Path.Combine(
+                        hostingEnvironment.ContentRootPath,
+                        string.Format("..{0}..{0}src{0}Dallal.HttpApi", Path.DirectorySeparatorChar)
+                    )
+                );
+                options.FileSets.ReplaceEmbeddedByPhysical<DallalWebModule>(
+                    hostingEnvironment.ContentRootPath
+                );
             }
         });
     }
@@ -238,16 +262,13 @@ public class DallalWebModule : AbpModule
 
     private void ConfigureSwaggerServices(IServiceCollection services)
     {
-        services.AddAbpSwaggerGen(
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Dallal API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-            }
-        );
+        services.AddAbpSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Dallal API", Version = "v1" });
+            options.DocInclusionPredicate((docName, description) => true);
+            options.CustomSchemaIds(type => type.FullName);
+        });
     }
-
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {

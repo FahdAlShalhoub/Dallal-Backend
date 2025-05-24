@@ -13,12 +13,14 @@ public class DallalDbContextFactory : IDesignTimeDbContextFactory<DallalDbContex
     public DallalDbContext CreateDbContext(string[] args)
     {
         var configuration = BuildConfiguration();
-        
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         DallalEfCoreEntityExtensionMappings.Configure();
 
-        var builder = new DbContextOptionsBuilder<DallalDbContext>()
-            .UseSqlServer(configuration.GetConnectionString("Default"));
-        
+        var builder = new DbContextOptionsBuilder<DallalDbContext>().UseNpgsql(
+            configuration.GetConnectionString("Default")
+        );
+
         return new DallalDbContext(builder.Options);
     }
 

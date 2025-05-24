@@ -1,0 +1,39 @@
+services:
+    postgres:
+        image: postgres:16-alpine
+        ports:
+            - 4432:5432
+        volumes:
+            - postgres:/data/postgres
+        environment:
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_USER=root
+            - POSTGRES_DB=LeakyTankDiver
+
+    redis:
+        image: redis:7-alpine
+        restart: always
+        ports:
+            - 4379:6379
+        volumes:
+            - redis:/data/redis
+        environment:
+            - REDIS_PORT=6379
+            - REDIS_DATABASES=16
+
+    # rabbitmq:
+    #     image: rabbitmq:3-management
+    #     restart: always
+    #     ports:
+    #         - 3672:5672 # RabbitMQ server
+    #         - 13672:15672 # Management UI
+    #     volumes:
+    #         - rabbitmq:/var/lib/rabbitmq
+    #     environment:
+    #         - RABBITMQ_DEFAULT_USER=user
+    #         - RABBITMQ_DEFAULT_PASS=password
+
+volumes:
+    postgres:
+    redis:
+    rabbitmq:
