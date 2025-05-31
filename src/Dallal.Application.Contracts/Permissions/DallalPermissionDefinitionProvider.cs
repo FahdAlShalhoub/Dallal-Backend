@@ -11,6 +11,14 @@ public class DallalPermissionDefinitionProvider : PermissionDefinitionProvider
     {
         var myGroup = context.AddGroup(DallalPermissions.GroupName);
 
+        var areasPermission = myGroup.AddPermission(
+            DallalPermissions.Areas.Default,
+            L("Permission:Areas")
+        );
+        areasPermission.AddChild(DallalPermissions.Areas.Create, L("Permission:Areas.Create"));
+        areasPermission.AddChild(DallalPermissions.Areas.Update, L("Permission:Areas.Update"));
+        areasPermission.AddChild(DallalPermissions.Areas.Delete, L("Permission:Areas.Delete"));
+
         //Define your own permissions here. Example:
         //myGroup.AddPermission(DallalPermissions.MyPermission1, L("Permission:MyPermission1"));
     }

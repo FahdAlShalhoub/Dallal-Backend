@@ -25,7 +25,13 @@ public class PhoneNumberExtensionGrant : AbstractExtensionGrant
 
         var user = await services
             .GetRequiredService<IRepository<IdentityUser, Guid>>()
-            .FirstOrDefaultAsync(x => x.PhoneNumber == otpObject.MobileNumber);
+            .FirstOrDefaultAsync(x =>
+                x.PhoneNumber == otpObject.MobileNumber
+                && (
+                    (entityType == "broker" && x is BrokerIdentity)
+                    || (entityType == "customer" && x is CustomerIdentity)
+                )
+            );
 
         if (user == null)
         {

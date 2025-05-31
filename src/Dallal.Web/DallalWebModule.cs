@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.Json.Serialization;
 using Dallal.EntityFrameworkCore;
 using Dallal.Localization;
 using Dallal.MultiTenancy;
@@ -80,7 +81,6 @@ public class DallalWebModule : AbpModule
             );
         });
 
-
         PreConfigure<OpenIddictBuilder>(builder =>
         {
             builder.AddValidation(options =>
@@ -154,6 +154,7 @@ public class DallalWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services, hostingEnvironment);
+        ConfigureJsonSerialization(context);
 
         Configure<PermissionManagementOptions>(options =>
         {
@@ -352,6 +353,19 @@ public class DallalWebModule : AbpModule
                 }
             );
             options.OperationFilter<SecureEndpointAuthRequirementFilter>();
+        });
+    }
+
+    private void ConfigureJsonSerialization(ServiceConfigurationContext context)
+    {
+        context.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
+
+        context.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
     }
 
