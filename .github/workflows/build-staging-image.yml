@@ -75,6 +75,10 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: Configure Container App Registry
+        run: |
+          az containerapp registry set --name dallal-container-app-staging           --resource-group dallal-staging           --server DallalRegistry.azurecr.io           --username ${{ secrets.ACR_USERNAME }}           --password ${{ secrets.ACR_PASSWORD }}
+
       - name: Deploy Container App Revision
         run: |
           az containerapp revision copy --name dallal-container-app-staging --resource-group dallal-staging  --revision-suffix ${{ github.run_number }} --image DallalRegistry.azurecr.io/dallal:${{ github.sha }} --container-name dallal-app
