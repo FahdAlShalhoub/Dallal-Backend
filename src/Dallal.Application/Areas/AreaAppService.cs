@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Dallal.Areas.Dtos;
 using Dallal.Localization;
+using Dallal.Localization.Dtos;
 using Dallal.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Dallal.Localization;
+using Dallal.Localization.Dtos;
 using Volo.Abp.Application.Dtos;
 
-namespace Dallal.Areas;
+namespace Dallal.Areas.Dtos;
 
 public class AreaDto : FullAuditedEntityDto<Guid>
 {

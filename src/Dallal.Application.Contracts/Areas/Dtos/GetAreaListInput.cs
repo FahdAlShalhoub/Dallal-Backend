@@ -1,7 +1,7 @@
 using System;
 using Volo.Abp.Application.Dtos;
 
-namespace Dallal.Areas;
+namespace Dallal.Areas.Dtos;
 
 public class GetAreaListInput : PagedAndSortedResultRequestDto
 {

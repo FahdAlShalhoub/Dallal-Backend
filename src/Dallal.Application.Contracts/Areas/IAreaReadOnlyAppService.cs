@@ -1,6 +1,5 @@
 using System;
-using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
+using Dallal.Areas.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Dallal.Areas;

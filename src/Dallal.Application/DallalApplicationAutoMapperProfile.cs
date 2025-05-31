@@ -1,7 +1,11 @@
 using System;
 using AutoMapper;
 using Dallal.Areas;
+using Dallal.Areas.Dtos;
+using Dallal.Listings;
+using Dallal.Listings.Dtos;
 using Dallal.Localization;
+using Dallal.Localization.Dtos;
 
 namespace Dallal;
 
@@ -19,6 +23,20 @@ public class DallalApplicationAutoMapperProfile : Profile
                 opt => opt.MapFrom(src => src.Parent != null ? src.Parent.Id : (Guid?)null)
             );
         CreateMap<CreateUpdateAreaDto, Area>();
+
+        // Listing mappings
+        CreateMap<Listing, ListingDto>();
+        CreateMap<CreateUpdateListingDto, Listing>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Area, opt => opt.Ignore())
+            .ForMember(dest => dest.Broker, opt => opt.Ignore())
+            .ForMember(dest => dest.Details, opt => opt.Ignore());
+
+        CreateMap<ListingDetail, ListingDetailDto>();
+        CreateMap<CreateUpdateListingDetailDto, ListingDetail>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Definition, opt => opt.Ignore())
+            .ForMember(dest => dest.Option, opt => opt.Ignore());
 
         // Mapping between LocalizedString and LocalizedStringDto
         CreateMap<LocalizedString, LocalizedStringDto>()

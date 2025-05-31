@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Dallal.Localization;
+namespace Dallal.Localization.Dtos;
 
 public class LocalizedStringDto
 {

@@ -19,6 +19,23 @@ public class DallalPermissionDefinitionProvider : PermissionDefinitionProvider
         areasPermission.AddChild(DallalPermissions.Areas.Update, L("Permission:Areas.Update"));
         areasPermission.AddChild(DallalPermissions.Areas.Delete, L("Permission:Areas.Delete"));
 
+        var listingsPermission = myGroup.AddPermission(
+            DallalPermissions.Listings.Default,
+            L("Permission:Listings")
+        );
+        listingsPermission.AddChild(
+            DallalPermissions.Listings.Create,
+            L("Permission:Listings.Create")
+        );
+        listingsPermission.AddChild(
+            DallalPermissions.Listings.Update,
+            L("Permission:Listings.Update")
+        );
+        listingsPermission.AddChild(
+            DallalPermissions.Listings.Delete,
+            L("Permission:Listings.Delete")
+        );
+
         //Define your own permissions here. Example:
         //myGroup.AddPermission(DallalPermissions.MyPermission1, L("Permission:MyPermission1"));
     }

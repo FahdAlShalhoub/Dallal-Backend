@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Dallal.Areas.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -21,7 +22,7 @@ public class AreaReadOnlyAppService
 
         if (!string.IsNullOrWhiteSpace(input.Name))
             query = query.Where(x => x.Name.ToString().Contains(input.Name));
-
+        query = query.Where(x => x.Children.Count == 0);
         return query;
     }
 }

@@ -1,8 +1,8 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using Dallal.Localization;
+using Dallal.Localization.Dtos;
 
-namespace Dallal.Areas;
+namespace Dallal.Areas.Dtos;
 
 public class CreateUpdateAreaDto
 {

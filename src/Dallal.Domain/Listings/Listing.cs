@@ -8,10 +8,12 @@ namespace Dallal.Listings;
 
 public class Listing : FullAuditedAggregateRoot<Guid>
 {
+    public Guid? BrokerId { get; set; }
     public BrokerIdentity? Broker { get; set; }
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
 
+    public Guid AreaId { get; set; } = default!;
     public Area Area { get; set; } = default!;
     public List<ListingDetail> Details { get; set; } = default!;
 }
