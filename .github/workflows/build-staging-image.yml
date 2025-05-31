@@ -41,8 +41,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ghcr.io/dallal:latest
-            ghcr.io/dallal:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/dallal:latest
+            ghcr.io/${{ github.repository }}/dallal:${{ github.sha }}
             DallalRegistry.azurecr.io/dallal:latest
             DallalRegistry.azurecr.io/dallal:${{ github.sha }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:latest
