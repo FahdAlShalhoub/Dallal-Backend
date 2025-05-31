@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -157,6 +158,20 @@ public class DallalWebModule : AbpModule
         Configure<PermissionManagementOptions>(options =>
         {
             options.IsDynamicPermissionStoreEnabled = true;
+        });
+        context.Services.AddCors(options =>
+        {
+            options.AddPolicy(
+                "AllowAll",
+                builder =>
+                {
+                    builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                }
+            );
+        });
+        Configure<IdentityOptions>(options =>
+        {
+            options.User.RequireUniqueEmail = false;
         });
     }
 
@@ -361,6 +376,7 @@ public class DallalWebModule : AbpModule
         }
 
         app.UseCorrelationId();
+        app.UseCors("AllowAll");
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseRouting();

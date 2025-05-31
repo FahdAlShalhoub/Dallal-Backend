@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When the expected behavior isn't specified, the code should throw an exception

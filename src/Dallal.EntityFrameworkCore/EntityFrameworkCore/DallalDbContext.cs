@@ -1,4 +1,9 @@
+using System;
+using Dallal.Areas;
+using Dallal.DetailDefinition;
 using Dallal.Identity;
+using Dallal.Listings;
+using Dallal.Localization;
 using Dallal.Otps;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -61,10 +66,29 @@ public class DallalDbContext
     public DbSet<CustomerIdentity> CustomerIdentities { get; set; } = default!;
     public DbSet<BrokerIdentity> BrokerIdentities { get; set; } = default!;
 
+    public DbSet<Area> Areas { get; set; } = default!;
+
+    // Listings
+    public DbSet<Listing> Listings { get; set; } = default!;
+    public DbSet<ListingDetail> ListingDetails { get; set; } = default!;
+    public DbSet<DetailsDefinition> DetailsDefinitions { get; set; } = default!;
+    public DbSet<DetailsDefinitionOption> DetailsDefinitionOptions { get; set; } = default!;
+
     #endregion
 
     public DallalDbContext(DbContextOptions<DallalDbContext> options)
         : base(options) { }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Properties<LocalizedString>(p =>
+        {
+            p.HaveColumnType("jsonb");
+        });
+
+        configurationBuilder.Properties<MultipleSearchBehavior>().HaveConversion<string>();
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

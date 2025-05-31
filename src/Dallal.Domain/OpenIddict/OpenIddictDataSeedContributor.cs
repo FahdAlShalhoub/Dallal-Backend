@@ -110,6 +110,8 @@ public class OpenIddictDataSeedContributor(
                     OpenIddictConstants.GrantTypes.Password,
                     OpenIddictConstants.GrantTypes.ClientCredentials,
                     OpenIddictConstants.GrantTypes.RefreshToken,
+                    "phone_number",
+                    "email_otp",
                     "LinkLogin",
                     "Impersonation",
                 },

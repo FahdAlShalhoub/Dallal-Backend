@@ -13,7 +13,7 @@ public class Program
     public static async Task<int> Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Async(c => c.Console())
+            .WriteTo.Console(theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code)
             .CreateBootstrapLogger();
 
         try
@@ -27,18 +27,14 @@ public class Program
                     (context, services, loggerConfiguration) =>
                     {
                         loggerConfiguration
-#if DEBUG
-                            .MinimumLevel.Debug()
-#else
                             .MinimumLevel.Information()
-#endif
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                             .MinimumLevel.Override(
                                 "Microsoft.EntityFrameworkCore",
                                 LogEventLevel.Warning
                             )
                             .Enrich.FromLogContext()
-                            .WriteTo.Async(c => c.Console());
+                            .WriteTo.Console();
                     }
                 );
             await builder.AddApplicationAsync<DallalWebModule>();

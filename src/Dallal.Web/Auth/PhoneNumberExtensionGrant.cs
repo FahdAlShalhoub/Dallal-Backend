@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using Dallal.Identity;
 using Dallal.Otps;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using IdentityUser = Volo.Abp.Identity.IdentityUser;
@@ -27,8 +29,15 @@ public class PhoneNumberExtensionGrant : AbstractExtensionGrant
 
         if (user == null)
         {
-            // TODO CREATE
-            throw new NotImplementedException();
+            user = entityType?.ToLower() switch
+            {
+                "broker" => new BrokerIdentity(Guid.NewGuid(), ""),
+                "customer" => new CustomerIdentity(Guid.NewGuid(), ""),
+                _ => throw new InvalidOperationException("Invalid entity type"),
+            };
+
+            user.SetPhoneNumber(otpObject.MobileNumber, true);
+            await services.GetRequiredService<UserManager<IdentityUser>>().CreateAsync(user);
         }
         return user;
     }
