@@ -8,7 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: main
-
     permissions:
       contents: read
       packages: write
@@ -45,3 +44,24 @@ jobs:
             DallalRegistry.azurecr.io/dallal:${{ github.sha }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:latest
           cache-to: type=inline
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
+              "clientSecret": "${{ secrets.AZURE_SECRET }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId": "${{ secrets.AZURE_TENANT }}"
+            }
+
+      - name: Deploy Container App Revision
+        run: |
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          az containerapp revision copy \
+            --name dallal-container-app-staging \ 
+            --resource-group dallal-staging \
+            --revision-suffix ${{ github.run_number }} \
+            --image DallalRegistry.azurecr.io/dallal:${{ github.sha }} \
+            --container-name dallal-app
