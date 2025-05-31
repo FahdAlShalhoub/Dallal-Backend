@@ -41,7 +41,7 @@ jobs:
           push: true
           tags: |
             DallalRegistry.azurecr.io/dallal:latest
-            DallalRegistry.azurecr.io/dallal:${{ github.sha }}
+            DallalRegistry.azurecr.io/dallal:${{ github.run_number }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:latest
           cache-to: type=inline
 
@@ -75,10 +75,6 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Configure Container App Registry
-        run: |
-          az containerapp registry set --name dallal-container-app-staging           --resource-group dallal-staging           --server DallalRegistry.azurecr.io           --username ${{ secrets.ACR_USERNAME }}           --password ${{ secrets.ACR_PASSWORD }}
-
       - name: Deploy Container App Revision
         run: |
-          az containerapp revision copy --name dallal-container-app-staging --resource-group dallal-staging  --revision-suffix ${{ github.run_number }} --image DallalRegistry.azurecr.io/dallal:${{ github.sha }} --container-name dallal-app
+          az containerapp revision copy --name dallal-container-app-staging --resource-group dallal-staging  --revision-suffix ${{ github.run_number }} --image DallalRegistry.azurecr.io/dallal:${{ github.run_number }} --container-name dallal-app
