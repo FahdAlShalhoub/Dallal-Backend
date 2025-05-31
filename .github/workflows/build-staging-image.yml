@@ -77,4 +77,4 @@ jobs:
 
       - name: Deploy Container App Revision
         run: |
-          az containerapp revision copy --name dallal-container-app-staging --resource-group dallal-staging  --revision-suffix ${{ github.run_number }} --image "dallalregistry.azurecr.io/dallal:21" --container-name dallal-app
+          az containerapp revision copy --name dallal-container-app-staging --resource-group dallal-staging  --revision-suffix ${{ github.run_number }} --image "dallalregistry.azurecr.io/dallal:24" --container-name dallal-app
