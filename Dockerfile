@@ -28,8 +28,6 @@ COPY src/Dallal.HttpApi/*.csproj ./src/Dallal.HttpApi/
 COPY src/Dallal.HttpApi.Client/*.csproj ./src/Dallal.HttpApi.Client/
 COPY src/Dallal.DbMigrator/*.csproj ./src/Dallal.DbMigrator/
 COPY src/Dallal.Web/*.csproj ./src/Dallal.Web/
-COPY src/Dallal.Integrations.Contracts/*.csproj ./src/Dallal.Integrations.Contracts/
-COPY src/Dallal.Integrations/*.csproj ./src/Dallal.Integrations/
 # Copy package.json and package-lock.json
 COPY src/Dallal.Web/package.json ./src/Dallal.Web/
 COPY src/Dallal.Web/package-lock.json ./src/Dallal.Web/
