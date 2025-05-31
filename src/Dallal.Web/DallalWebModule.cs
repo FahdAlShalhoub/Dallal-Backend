@@ -79,6 +79,7 @@ public class DallalWebModule : AbpModule
             );
         });
 
+
         PreConfigure<OpenIddictBuilder>(builder =>
         {
             builder.AddValidation(options =>
