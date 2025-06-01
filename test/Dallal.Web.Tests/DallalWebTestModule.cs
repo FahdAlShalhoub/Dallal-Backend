@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Globalization;
+using Dallal.EntityFrameworkCore;
+using Dallal.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Dallal.EntityFrameworkCore;
-using Dallal.Web;
-using Dallal.Web.Menus;
 using Volo.Abp.AspNetCore.TestBase;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
@@ -32,7 +31,9 @@ public class DallalWebTestModule : AbpModule
 
         context.Services.PreConfigure<IMvcBuilder>(builder =>
         {
-            builder.PartManager.ApplicationParts.Add(new CompiledRazorAssemblyPart(typeof(DallalWebModule).Assembly));
+            builder.PartManager.ApplicationParts.Add(
+                new CompiledRazorAssemblyPart(typeof(DallalWebModule).Assembly)
+            );
         });
 
         context.Services.GetPreConfigureActions<OpenIddictServerBuilder>().Clear();
@@ -45,7 +46,6 @@ public class DallalWebTestModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         ConfigureLocalizationServices(context.Services);
-        ConfigureNavigationServices(context.Services);
     }
 
     private static void ConfigureLocalizationServices(IServiceCollection services)
@@ -56,14 +56,6 @@ public class DallalWebTestModule : AbpModule
             options.DefaultRequestCulture = new RequestCulture("en");
             options.SupportedCultures = cultures;
             options.SupportedUICultures = cultures;
-        });
-    }
-
-    private static void ConfigureNavigationServices(IServiceCollection services)
-    {
-        services.Configure<AbpNavigationOptions>(options =>
-        {
-            options.MenuContributors.Add(new DallalMenuContributor());
         });
     }
 }
