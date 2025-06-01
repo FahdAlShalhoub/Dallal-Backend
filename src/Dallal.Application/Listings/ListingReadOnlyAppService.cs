@@ -20,7 +20,7 @@ public class ListingReadOnlyAppService
         GetListingListInput input
     )
     {
-        var query = await Repository.GetQueryableAsync();
+        var query = await Repository.WithDetailsAsync(x => x.Area);
 
         query = query.WhereIf(
             !string.IsNullOrWhiteSpace(input.Name),
