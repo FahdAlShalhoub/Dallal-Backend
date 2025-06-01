@@ -13,4 +13,19 @@ public class ListingDto : FullAuditedEntityDto<Guid>
     public Guid AreaId { get; set; }
     public AreaDto Area { get; set; } = default!;
     public List<ListingDetailDto> Details { get; set; } = [];
+
+    // Price and financial properties
+    public decimal PricePerContract { get; set; }
+    public string Currency { get; set; } = default!;
+    public decimal PricePerYear { get; set; } // Auto-calculated property
+
+    // Listing and property type
+    public ListingType ListingType { get; set; }
+    public PropertyType PropertyType { get; set; }
+    public RentalContractPeriod? RentalContractPeriod { get; set; }
+
+    // Property specifications
+    public int BedroomCount { get; set; }
+    public int BathroomCount { get; set; }
+    public decimal AreaInMetersSq { get; set; }
 }

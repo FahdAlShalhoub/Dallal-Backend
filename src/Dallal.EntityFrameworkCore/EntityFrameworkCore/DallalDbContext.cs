@@ -87,7 +87,7 @@ public class DallalDbContext
             p.HaveColumnType("jsonb");
         });
 
-        configurationBuilder.Properties<MultipleSearchBehavior>().HaveConversion<string>();
+        configurationBuilder.Properties<Enum>().HaveConversion<string>();
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
