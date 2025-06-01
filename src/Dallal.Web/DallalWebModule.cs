@@ -20,11 +20,13 @@ using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
+using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
 using Volo.Abp.OpenIddict.ExtensionGrantTypes;
@@ -42,6 +44,8 @@ namespace Dallal.Web;
     typeof(DallalEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
     typeof(AbpSwashbuckleModule),
+    typeof(AbpIdentityWebModule),
+    typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreSerilogModule)
 )]
 public class DallalWebModule : AbpModule

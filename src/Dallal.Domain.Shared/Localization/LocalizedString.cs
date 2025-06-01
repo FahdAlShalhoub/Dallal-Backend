@@ -68,9 +68,11 @@ public class LocalizedString
     public void SetValue(string languageCode, string value)
     {
         if (string.IsNullOrEmpty(languageCode))
-            return;
-
-        Values[languageCode] = value;
+            throw new ArgumentNullException(nameof(languageCode));
+        if (string.IsNullOrEmpty(value))
+            Values.Remove(languageCode);
+        else
+            Values[languageCode] = value;
     }
 
     public bool Contains(string searchValue)
