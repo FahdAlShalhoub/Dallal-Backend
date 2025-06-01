@@ -6,7 +6,6 @@ using Dallal.Localization;
 using Dallal.MultiTenancy;
 using Dallal.Web.Auth;
 using Dallal.Web.HealthChecks;
-using Dallal.Web.Menus;
 using Dallal.Web.Swagger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -21,28 +20,17 @@ using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
-using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.FeatureManagement;
-using Volo.Abp.Identity.Web;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
 using Volo.Abp.OpenIddict.ExtensionGrantTypes;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
-using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Swashbuckle;
-using Volo.Abp.TenantManagement.Web;
-using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 
@@ -53,12 +41,6 @@ namespace Dallal.Web;
     typeof(DallalApplicationModule),
     typeof(DallalEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
-    typeof(AbpStudioClientAspNetCoreModule),
-    typeof(AbpIdentityWebModule),
-    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
-    typeof(AbpAccountWebOpenIddictModule),
-    typeof(AbpTenantManagementWebModule),
-    typeof(AbpFeatureManagementWebModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule)
 )]
@@ -144,14 +126,11 @@ public class DallalWebModule : AbpModule
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
             });
         }
-
-        // ConfigureBundles();
         ConfigureUrls(configuration);
         ConfigureHealthChecks(context);
         ConfigureAuthentication(context);
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
-        ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services, hostingEnvironment);
         ConfigureJsonSerialization(context);
@@ -179,21 +158,6 @@ public class DallalWebModule : AbpModule
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
         context.Services.AddDallalHealthChecks();
-    }
-
-    private void ConfigureBundles()
-    {
-        Configure<AbpBundlingOptions>(options =>
-        {
-            options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
-                bundle =>
-                {
-                    bundle.AddFiles("/global-scripts.js");
-                    bundle.AddFiles("/global-styles.css");
-                }
-            );
-        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -282,19 +246,6 @@ public class DallalWebModule : AbpModule
         });
     }
 
-    private void ConfigureNavigationServices()
-    {
-        Configure<AbpNavigationOptions>(options =>
-        {
-            options.MenuContributors.Add(new DallalMenuContributor());
-        });
-
-        Configure<AbpToolbarOptions>(options =>
-        {
-            options.Contributors.Add(new DallalToolbarContributor());
-        });
-    }
-
     private void ConfigureAutoApiControllers()
     {
         Configure<AbpAspNetCoreMvcOptions>(options =>
@@ -378,21 +329,20 @@ public class DallalWebModule : AbpModule
 
         if (env.IsDevelopment())
         {
-            app.UseDeveloperExceptionPage();
+            // app.UseDeveloperExceptionPage();
         }
 
         app.UseAbpRequestLocalization();
 
         if (!env.IsDevelopment())
         {
-            app.UseErrorPage();
+            // app.UseErrorPage();
             app.UseHsts();
         }
 
         app.UseCorrelationId();
         app.UseCors("AllowAll");
         app.MapAbpStaticAssets();
-        app.UseAbpStudioLink();
         app.UseRouting();
         app.UseAbpSecurityHeaders();
         app.UseAuthentication();

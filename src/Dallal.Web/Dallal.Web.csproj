@@ -71,8 +71,4 @@
     <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="9.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Volo.Abp.Studio.Client.AspNetCore" Version="0.9.25" />
-  </ItemGroup>
-
 </Project>

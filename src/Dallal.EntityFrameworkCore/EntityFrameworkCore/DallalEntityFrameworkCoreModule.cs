@@ -16,7 +16,6 @@ using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
-using Volo.Abp.Studio;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 
 namespace Dallal.EntityFrameworkCore;
@@ -48,11 +47,6 @@ public class DallalEntityFrameworkCoreModule : AbpModule
         {
             options.AddDefaultRepositories(includeAllEntities: true);
         });
-
-        if (AbpStudioAnalyzeHelper.IsInAnalyzeMode)
-        {
-            return;
-        }
 
         var configuration = context.Services.GetConfiguration();
 
