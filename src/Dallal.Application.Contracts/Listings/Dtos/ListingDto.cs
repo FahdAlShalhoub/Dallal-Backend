@@ -8,6 +8,7 @@ namespace Dallal.Listings.Dtos;
 public class ListingDto : FullAuditedEntityDto<Guid>
 {
     public Guid? BrokerId { get; set; }
+    public string Image { get; set; } = "https://picsum.photos/500";
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
     public Guid AreaId { get; set; }
