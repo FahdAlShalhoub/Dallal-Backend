@@ -3,24 +3,23 @@ using System.IO;
 using System.Threading.Tasks;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Dallal.Documents.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp;
-using Volo.Abp.BlobStoring;
-using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Validation;
 
 namespace Dallal.Documents;
 
-[ApiExplorerSettings(GroupName = "Customer,Broker,Admin")]
+[ApiExplorerSettings(GroupName = "Broker,Admin")]
+[Authorize(Roles = "Broker,Admin")]
 public class DocumentsAppService(IAmazonS3 s3Client, IConfiguration configuration)
     : DallalAppService,
         IDocumentsAppService,
         ITransientDependency
 {
-    public async Task<string> GetPresignedUrl(string fileName)
+    public async Task<PresignedUrlDto> GetPresignedUrl(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -34,7 +33,9 @@ public class DocumentsAppService(IAmazonS3 s3Client, IConfiguration configuratio
         }
 
         // Generate a unique file key to avoid conflicts
-        var fileKey = $"documents/{Guid.NewGuid()}/{fileName}";
+        var guid = Guid.NewGuid();
+        var fileKey = $"documents/{guid}/{fileName}";
+        var guidFileName = $"{guid}_{fileName}";
 
         // Create the presigned URL request
         var request = new GetPreSignedUrlRequest
@@ -48,7 +49,8 @@ public class DocumentsAppService(IAmazonS3 s3Client, IConfiguration configuratio
 
         // Generate and return the presigned URL
         var presignedUrl = await s3Client.GetPreSignedURLAsync(request);
-        return presignedUrl;
+
+        return new PresignedUrlDto { Url = presignedUrl, FileName = guidFileName };
     }
 
     private static string GetContentType(string fileName)
