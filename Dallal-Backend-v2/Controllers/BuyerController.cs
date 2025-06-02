@@ -8,11 +8,6 @@ namespace Dallal_Backend_v2.Controllers;
 [Route("[controller]")]
 public class BuyerController : ControllerBase
 {
-    private static readonly string[] Summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
     [HttpGet(Name = "GetBuyers")]
     public async Task<List<Buyer>> Get(DatabaseContext context)
     {

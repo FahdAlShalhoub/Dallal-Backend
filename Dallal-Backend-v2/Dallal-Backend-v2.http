@@ -1,6 +1,0 @@
-@Dallal_Backend_v2_HostAddress = http://localhost:5260
-
-GET {{Dallal_Backend_v2_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
