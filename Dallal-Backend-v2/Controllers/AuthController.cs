@@ -1,10 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Controllers;
 
@@ -14,15 +16,17 @@ public class AuthController : ControllerBase
 {
     private readonly FirebaseTokenVerifier _firebaseTokenVerifier;
     private readonly JwtService _jwtService;
+    private readonly DatabaseContext _context;
 
-    public AuthController(FirebaseTokenVerifier firebaseTokenVerifier, JwtService jwtService)
+    public AuthController(FirebaseTokenVerifier firebaseTokenVerifier, JwtService jwtService, DatabaseContext context)
     {
         _firebaseTokenVerifier = firebaseTokenVerifier;
         _jwtService = jwtService;
+        _context = context;
     }
 
     [HttpPost("oauth")]
-    public async Task<IActionResult> OAuth([FromBody] OAuthRequest request)
+    public async Task<AuthenticatedUser> OAuth([FromBody] OAuthRequest request)
     {
         try
         {
@@ -44,11 +48,38 @@ public class AuthController : ControllerBase
                     Email = email
                 }
             };
-            return Ok(response);
+            return response;
         }
-        catch (Exception e)
+        catch (FirebaseAuthException e)
         {
-            return BadRequest(e.Message);
+            throw new ArgumentException();
         }
+    }
+
+    [HttpPost("buyer/login")]
+    public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
+    {
+        Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
+        if (buyer == null || BCrypt.Net.BCrypt.Verify(request.Password, buyer.Password))
+        {
+            throw new UnauthorizedAccessException("Invalid Email or Password");
+        }
+
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, request.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var response = new AuthenticatedUser
+        {
+            AccessToken = _jwtService.GenerateToken(claims),
+            User = new UserInfo
+            {
+                Name = buyer.Name,
+                Email = request.Email
+            }
+        };
+        return response;
     }
 }

@@ -37,13 +37,7 @@ public class FirebaseTokenVerifier
         {
             // Token is invalid, expired, or malformed
             Console.WriteLine($"Firebase Auth Error: {ex.Message}");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            // Other errors
-            Console.WriteLine($"Error verifying token: {ex.Message}");
-            return null;
+            throw;
         }
     }
 }

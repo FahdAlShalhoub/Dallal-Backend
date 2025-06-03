@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Dallal_Backend_v2;
+using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 
 app.UseAuthorization();
 app.UseAuthentication();
