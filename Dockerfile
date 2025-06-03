@@ -15,6 +15,8 @@ RUN dotnet restore "Dallal-Backend-v2/Dallal-Backend-v2.csproj"
 COPY . .
 WORKDIR "/src/Dallal-Backend-v2"
 RUN dotnet build "Dallal-Backend-v2.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+ENV EF_BUNDLE_EXECUTION=true
 RUN dotnet ef migrations bundle --self-contained -o /app/build/efbundle
 
 FROM build AS publish

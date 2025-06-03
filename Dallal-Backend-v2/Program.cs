@@ -7,27 +7,34 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
-Trace.Assert(!string.IsNullOrEmpty(jwtSecret), "JWTSecret not found");
-
-string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
-Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
-
-string? databaseConnectionString = builder.Configuration.GetConnectionString("Default");
-Trace.Assert(!string.IsNullOrEmpty(databaseConnectionString), "Database connection string not found");
-
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<DatabaseContext>(opt =>
-    opt.UseNpgsql(databaseConnectionString));
 
-var jwt = new JwtService(jwtSecret);
-builder.Services.AddSingleton(jwt);
-builder.Services.AddSingleton(new FirebaseTokenVerifier(firebaseAuth));
+if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
+{
+    string? databaseConnectionString = builder.Configuration.GetConnectionString("Default");
+    Trace.Assert(!string.IsNullOrEmpty(databaseConnectionString), "Database connection string not found");
+    builder.Services.AddDbContext<DatabaseContext>(opt =>
+        opt.UseNpgsql(databaseConnectionString));
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
+    string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
+    Trace.Assert(!string.IsNullOrEmpty(jwtSecret), "JWTSecret not found");
+    var jwt = new JwtService(jwtSecret);
+    builder.Services.AddSingleton(jwt);
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
+
+    string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
+    Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
+    builder.Services.AddSingleton(new FirebaseTokenVerifier(firebaseAuth));
+}
+else
+{
+    builder.Services.AddDbContext<DatabaseContext>(opt =>
+        opt.UseNpgsql());
+}
+
 
 builder.Services.AddAuthorization();
 
