@@ -32,6 +32,9 @@ public class AuthController : ControllerBase
         {
             var firebaseToken = await _firebaseTokenVerifier.VerifyIdTokenAsync(request.idToken);
             var email = (string) firebaseToken.Claims.GetValueOrDefault("email")!;
+            firebaseToken.Claims.TryGetValue("picture", out object? image);
+
+            image ??= "https://picsum.photos/500";
 
             var claims = new[]
             {
@@ -44,6 +47,7 @@ public class AuthController : ControllerBase
                 AccessToken = _jwtService.GenerateToken(claims),
                 User = new UserInfo
                 {
+                    Image = (string) image,
                     Name = "Bob",
                     Email = email
                 }
@@ -57,6 +61,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("buyer/login")]
+    [ProducesResponseType(typeof(AuthenticatedUser), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
     {
         Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
@@ -76,6 +83,7 @@ public class AuthController : ControllerBase
             AccessToken = _jwtService.GenerateToken(claims),
             User = new UserInfo
             {
+                Image = "https://picsum.photos/100/100",
                 Name = buyer.Name,
                 Email = request.Email
             }
