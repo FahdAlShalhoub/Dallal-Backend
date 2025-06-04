@@ -63,7 +63,7 @@ public class AuthController : ControllerBase
                     Image = (string) image,
                     Name = fullName,
                     Email = email,
-                    Type = "Buyer"
+                    Type = UserTypes.Buyer.GetDescription()
                 }
             };
             return response;
