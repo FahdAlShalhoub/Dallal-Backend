@@ -11,4 +11,5 @@ public record UserInfo
     public string Image { get; init; }
     public string Name { get; init; }
     public string Email { get; init; }
+    public string Type { get; init; }
 }

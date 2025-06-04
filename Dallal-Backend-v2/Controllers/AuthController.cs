@@ -39,8 +39,8 @@ public class AuthController : ControllerBase
             image ??= "https://picsum.photos/500";
             givenName ??= "";
             familyName ??= "";
-            string fullName = "";
-            if (string.IsNullOrEmpty((string) givenName) && string.IsNullOrEmpty((string) familyName))
+            string fullName;
+            if (!string.IsNullOrEmpty((string) givenName) && !string.IsNullOrEmpty((string) familyName))
             {
                 fullName = $"{givenName} {familyName}";
             }
@@ -62,7 +62,8 @@ public class AuthController : ControllerBase
                 {
                     Image = (string) image,
                     Name = fullName,
-                    Email = email
+                    Email = email,
+                    Type = "Buyer"
                 }
             };
             return response;
@@ -98,7 +99,8 @@ public class AuthController : ControllerBase
             {
                 Image = "https://picsum.photos/100/100",
                 Name = buyer.Name,
-                Email = request.Email
+                Email = request.Email,
+                Type = "Buyer"
             }
         };
         return response;
