@@ -33,8 +33,21 @@ public class AuthController : ControllerBase
             var firebaseToken = await _firebaseTokenVerifier.VerifyIdTokenAsync(request.idToken);
             var email = (string) firebaseToken.Claims.GetValueOrDefault("email")!;
             firebaseToken.Claims.TryGetValue("picture", out object? image);
+            firebaseToken.Claims.TryGetValue("given_name", out object? givenName);
+            firebaseToken.Claims.TryGetValue("family_name", out object? familyName);
 
             image ??= "https://picsum.photos/500";
+            givenName ??= "";
+            familyName ??= "";
+            string fullName = "";
+            if (string.IsNullOrEmpty((string) givenName) && string.IsNullOrEmpty((string) familyName))
+            {
+                fullName = $"{givenName} {familyName}";
+            }
+            else
+            {
+                fullName = email;
+            }
 
             var claims = new[]
             {
@@ -48,7 +61,7 @@ public class AuthController : ControllerBase
                 User = new UserInfo
                 {
                     Image = (string) image,
-                    Name = "Bob",
+                    Name = fullName,
                     Email = email
                 }
             };
