@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Dallal_Backend_v2.Controllers.Dtos;
@@ -43,37 +42,39 @@ public class AuthController : ControllerBase
             firebaseToken.Claims.TryGetValue("given_name", out object? givenName);
             firebaseToken.Claims.TryGetValue("family_name", out object? familyName);
 
-            image ??= "https://picsum.photos/500";
-            givenName ??= "";
-            familyName ??= "";
-            string fullName;
-            if (!string.IsNullOrEmpty((string) givenName) && !string.IsNullOrEmpty((string) familyName))
-            {
-                fullName = $"{givenName} {familyName}";
-            }
-            else
-            {
-                fullName = email;
-            }
+            Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(x => x.Email == email);
 
-            var claims = new[]
+            if (buyer is null)
             {
-                new Claim(JwtRegisteredClaimNames.Sub, email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+                image ??= "https://picsum.photos/500";
+                givenName ??= "";
+                familyName ??= "";
+                string fullName;
 
-            var response = new AuthenticatedUser
-            {
-                AccessToken = _jwtService.GenerateToken(claims),
-                User = new UserInfo
+                if (!string.IsNullOrEmpty((string) givenName) && !string.IsNullOrEmpty((string) familyName))
                 {
-                    Image = (string) image,
-                    Name = fullName,
-                    Email = email,
-                    Type = UserTypes.Buyer.GetDescription()
+                    fullName = $"{givenName} {familyName}";
                 }
-            };
-            return response;
+                else
+                {
+                    fullName = email;
+                }
+
+                buyer = new Buyer
+                {
+                    Id = new Guid(),
+                    Email = email,
+                    Name = fullName,
+                    ProfileImage = (string) image,
+                    Password = "oAuth User",
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    DeletedAt = null
+                };
+            }
+
+            await _context.SaveChangesAsync();
+            return CreateToken(buyer);
         }
         catch (FirebaseAuthException e)
         {
@@ -93,9 +94,14 @@ public class AuthController : ControllerBase
             throw new UnauthorizedAccessException("Invalid Email or Password");
         }
 
+        return CreateToken(buyer);
+    }
+
+    private AuthenticatedUser CreateToken(Buyer buyer)
+    {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, request.Email),
+            new Claim(JwtRegisteredClaimNames.Sub, buyer.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -104,9 +110,9 @@ public class AuthController : ControllerBase
             AccessToken = _jwtService.GenerateToken(claims),
             User = new UserInfo
             {
-                Image = "https://picsum.photos/100/100",
+                Image = buyer.ProfileImage,
                 Name = buyer.Name,
-                Email = request.Email,
+                Email = buyer.Email,
                 Type = "Buyer"
             }
         };
