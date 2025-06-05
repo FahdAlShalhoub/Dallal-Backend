@@ -3,8 +3,10 @@ using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
+using Google.Apis.Requests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +18,12 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 {
     string? databaseConnectionString = builder.Configuration.GetConnectionString("Default");
     Trace.Assert(!string.IsNullOrEmpty(databaseConnectionString), "Database connection string not found");
+    var dataSourceBuilder = new NpgsqlDataSourceBuilder(databaseConnectionString);
+    dataSourceBuilder.EnableDynamicJson();
+    var dataSource = dataSourceBuilder.Build();
+
     builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql(databaseConnectionString));
+        opt.UseNpgsql(dataSource).UseSeeding(DatabaseContext.Seed()));
 
     string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
     Trace.Assert(!string.IsNullOrEmpty(jwtSecret), "JWTSecret not found");

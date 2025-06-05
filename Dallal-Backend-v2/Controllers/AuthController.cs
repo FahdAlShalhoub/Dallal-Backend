@@ -71,9 +71,10 @@ public class AuthController : ControllerBase
                     UpdatedAt = DateTime.Now,
                     DeletedAt = null
                 };
+                await _context.Buyers.AddAsync(buyer);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return CreateToken(buyer);
         }
         catch (FirebaseAuthException e)
