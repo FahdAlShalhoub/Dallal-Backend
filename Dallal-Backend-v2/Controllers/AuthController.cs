@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Dallal_Backend_v2.Controllers.Dtos;
@@ -31,7 +32,13 @@ public class AuthController : ControllerBase
         try
         {
             var firebaseToken = await _firebaseTokenVerifier.VerifyIdTokenAsync(request.idToken);
-            var email = (string) firebaseToken.Claims.GetValueOrDefault("email")!;
+            var emailClaim = firebaseToken.Claims.GetValueOrDefault("email");
+
+            if (emailClaim is not string email)
+            {
+                throw new Exception("Invalid Email Claim From Firebase Token");
+            }
+
             firebaseToken.Claims.TryGetValue("picture", out object? image);
             firebaseToken.Claims.TryGetValue("given_name", out object? givenName);
             firebaseToken.Claims.TryGetValue("family_name", out object? familyName);
