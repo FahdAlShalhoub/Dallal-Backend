@@ -4,6 +4,7 @@ using Dallal_Backend_v2;
 using Dallal_Backend_v2.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dallal_Backend_v2
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250605171439_AreaAndListing")]
+    partial class AreaAndListing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,18 +32,12 @@ namespace Dallal_Backend_v2
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<LocalizedString>("Name")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -58,7 +55,7 @@ namespace Dallal_Backend_v2
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTime>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -117,45 +114,6 @@ namespace Dallal_Backend_v2
                     b.ToTable("Buyers");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<LocalizedString>("Name")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DetailsDefinition");
-                });
-
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinitionOption", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("DetailsDefinitionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<LocalizedString>("Name")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DetailsDefinitionId");
-
-                    b.ToTable("DetailsDefinitionOption");
-                });
-
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Listing", b =>
                 {
                     b.Property<Guid>("Id")
@@ -196,9 +154,6 @@ namespace Dallal_Backend_v2
                     b.Property<decimal>("PricePerContract")
                         .HasColumnType("numeric");
 
-                    b.Property<decimal>("PricePerYear")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("PropertyType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -215,32 +170,6 @@ namespace Dallal_Backend_v2
                     b.ToTable("Listings");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.ListingDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DefinitionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OptionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DefinitionId");
-
-                    b.HasIndex("ListingId");
-
-                    b.HasIndex("OptionId");
-
-                    b.ToTable("ListingDetail");
-                });
-
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Area", b =>
                 {
                     b.HasOne("Dallal_Backend_v2.Entities.Area", "Parent")
@@ -248,13 +177,6 @@ namespace Dallal_Backend_v2
                         .HasForeignKey("ParentId");
 
                     b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinitionOption", b =>
-                {
-                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinition", null)
-                        .WithMany("Options")
-                        .HasForeignKey("DetailsDefinitionId");
                 });
 
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Listing", b =>
@@ -276,42 +198,9 @@ namespace Dallal_Backend_v2
                     b.Navigation("Broker");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.ListingDetail", b =>
-                {
-                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinition", "Definition")
-                        .WithMany()
-                        .HasForeignKey("DefinitionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Dallal_Backend_v2.Entities.Listing", null)
-                        .WithMany("Details")
-                        .HasForeignKey("ListingId");
-
-                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinitionOption", "Option")
-                        .WithMany()
-                        .HasForeignKey("OptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Definition");
-
-                    b.Navigation("Option");
-                });
-
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Area", b =>
                 {
                     b.Navigation("Children");
-                });
-
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinition", b =>
-                {
-                    b.Navigation("Options");
-                });
-
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.Listing", b =>
-                {
-                    b.Navigation("Details");
                 });
 #pragma warning restore 612, 618
         }

@@ -3,9 +3,11 @@ namespace Dallal_Backend_v2.Entities;
 public class Listing
 {
     public Guid Id { get; set; }
+    public Guid BrokerId { get; set; }
     public Broker Broker { get; set; }
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
+    public Guid AreaId { get; set; }
     public Area Area { get; set; } = default!;
     public string Currency { get; set; } = default!;
     public decimal PricePerContract { get; set; }
@@ -21,7 +23,7 @@ public class Listing
         get
         {
             if (ListingType == ListingType.Buy)
-                return 0; // No annual price for purchases
+                return 0;
 
             return RentalContractPeriod switch
             {
