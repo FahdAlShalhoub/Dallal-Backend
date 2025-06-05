@@ -16,6 +16,23 @@ public class Listing
     public PropertyType PropertyType { get; set; }
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;
+    public decimal PricePerYear
+    {
+        get
+        {
+            if (ListingType == ListingType.Buy)
+                return 0; // No annual price for purchases
+
+            return RentalContractPeriod switch
+            {
+                Entities.RentalContractPeriod.Day => PricePerContract * 365,
+                Entities.RentalContractPeriod.Month => PricePerContract * 12,
+                Entities.RentalContractPeriod.Year => PricePerContract,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+        private set { }
+    }
 }
 
 public class ListingDetail
