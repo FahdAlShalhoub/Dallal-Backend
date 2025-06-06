@@ -67,8 +67,8 @@ public class AuthController : ControllerBase
                     Name = fullName,
                     ProfileImage = (string) image,
                     Password = "oAuth User",
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     DeletedAt = null
                 };
                 await _context.Buyers.AddAsync(buyer);
