@@ -79,4 +79,9 @@ public class LocalizedString
     {
         return GetValue();
     }
+
+    public static implicit operator string(LocalizedString localizedString)
+    {
+        return localizedString.GetValue();
+    }
 }

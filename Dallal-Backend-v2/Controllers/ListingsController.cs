@@ -27,42 +27,35 @@ public class ListingsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Listings()
     {
-        var listings = await _context.Listings
-            .Include(listing => listing.Broker)
+        var listings = await _context
+            .Listings.Include(listing => listing.Broker)
             .Include(listing => listing.Area)
             .ToListAsync();
 
-        string acceptLanguage = "ar";
-
-        if (Request.Headers.ContainsKey("Accept-Language"))
-        {
-            acceptLanguage = Request.Headers.AcceptLanguage.ToString();
-        }
-
         return Ok(
-                listings.Select(listing => new ListingDto
+            listings.Select(listing => new ListingDto
+            {
+                Id = listing.Id,
+                Name = listing.Name,
+                Description = listing.Description,
+                Broker = new BrokerDto
                 {
-                    Id = listing.Id,
-                    Name = listing.Name,
-                    Description = listing.Description,
-                    Broker = new BrokerDto
-                    {
-                        Id = listing.Broker.Id,
-                        Email = listing.Broker.Email,
-                        Name = listing.Broker.Name
-                    },
-                    Area = listing.Area.Name.GetValue(acceptLanguage),
-                    Currency = listing.Currency,
-                    PricePerContract = listing.PricePerContract,
-                    BedroomCount = listing.BedroomCount,
-                    BathroomCount = listing.BathroomCount,
-                    AreaInMetersSq = listing.AreaInMetersSq,
-                    ListingType = listing.ListingType.GetDescription(),
-                    PropertyType = listing.PropertyType.GetDescription(),
-                    RentalContractPeriod = listing.RentalContractPeriod?.GetDescription(),
-                    Details = null,
-                    PricePerYear = listing.PricePerYear
-                })
-            );
+                    Id = listing.Broker.Id,
+                    Email = listing.Broker.Email,
+                    Name = listing.Broker.Name,
+                },
+                Area = listing.Area.Name,
+                Currency = listing.Currency,
+                PricePerContract = listing.PricePerContract,
+                BedroomCount = listing.BedroomCount,
+                BathroomCount = listing.BathroomCount,
+                AreaInMetersSq = listing.AreaInMetersSq,
+                ListingType = listing.ListingType.GetDescription(),
+                PropertyType = listing.PropertyType.GetDescription(),
+                RentalContractPeriod = listing.RentalContractPeriod?.GetDescription(),
+                Details = null,
+                PricePerYear = listing.PricePerYear,
+            })
+        );
     }
 }
