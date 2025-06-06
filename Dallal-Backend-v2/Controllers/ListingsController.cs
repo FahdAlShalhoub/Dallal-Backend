@@ -50,9 +50,9 @@ public class ListingsController : ControllerBase
                 BedroomCount = listing.BedroomCount,
                 BathroomCount = listing.BathroomCount,
                 AreaInMetersSq = listing.AreaInMetersSq,
-                ListingType = listing.ListingType.GetDescription(),
-                PropertyType = listing.PropertyType.GetDescription(),
-                RentalContractPeriod = listing.RentalContractPeriod?.GetDescription(),
+                ListingType = listing.ListingType,
+                PropertyType = listing.PropertyType,
+                RentalContractPeriod = listing.RentalContractPeriod,
                 Details = null,
                 PricePerYear = listing.PricePerYear,
             })

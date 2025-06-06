@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
@@ -12,7 +13,14 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder
+    .Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure JSON serialization to convert enums to strings
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 builder.Services.AddOpenApi();
 
 if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
@@ -54,6 +62,12 @@ builder.Services.Configure<RequestLocalizationOptions>(i =>
 {
     i.SupportedCultures = [new("en"), new("ar")];
     i.SupportedUICultures = [new("en"), new("ar")];
+});
+
+// Configure HTTP JSON options for consistent enum serialization
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 builder.Services.AddAuthorization();
