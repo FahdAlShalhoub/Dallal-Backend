@@ -1,0 +1,29 @@
+using Dallal_Backend_v2.Entities;
+
+namespace Dallal_Backend_v2.Controllers.Dtos;
+
+public class ListingDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = default!;
+    public string Description { get; set; } = default!;
+    public BrokerDto Broker { get; set; } = default!;
+    public string Area { get; set; } = default!;
+    public string Currency { get; set; } = default!;
+    public decimal PricePerContract { get; set; }
+    public int BedroomCount { get; set; }
+    public int BathroomCount { get; set; }
+    public decimal AreaInMetersSq { get; set; }
+    public string ListingType { get; set; }
+    public string PropertyType { get; set; }
+    public string? RentalContractPeriod { get; set; }
+    public List<ListingDetail> Details { get; set; } = default!;
+    public decimal PricePerYear { get; set; } = 0;
+}
+
+public record BrokerDto
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; }
+    public string Name { get; set; }
+}
