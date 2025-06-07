@@ -17,7 +17,8 @@ public class ProblemDetailsExceptionMiddleware
         RequestDelegate next,
         ILogger<ProblemDetailsExceptionMiddleware> logger,
         IWebHostEnvironment environment,
-        ProblemDetailsFactory problemDetailsFactory)
+        ProblemDetailsFactory problemDetailsFactory
+    )
     {
         _next = next;
         _logger = logger;
@@ -41,9 +42,12 @@ public class ProblemDetailsExceptionMiddleware
     {
         var traceId = Activity.Current?.Id ?? context.TraceIdentifier;
 
-        _logger.LogError(exception,
+        _logger.LogError(
+            exception,
             "An unhandled exception occurred. TraceId: {TraceId}, Path: {Path}",
-            traceId, context.Request.Path);
+            traceId,
+            context.Request.Path
+        );
 
         var problemDetails = CreateProblemDetails(context, exception, traceId);
 
@@ -54,14 +58,23 @@ public class ProblemDetailsExceptionMiddleware
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = _environment.IsDevelopment(),
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = System
+                .Text
+                .Json
+                .Serialization
+                .JsonIgnoreCondition
+                .WhenWritingNull,
         };
 
         var json = JsonSerializer.Serialize(problemDetails, options);
         await context.Response.WriteAsync(json);
     }
 
-    private ProblemDetails CreateProblemDetails(HttpContext context, Exception exception, string traceId)
+    private ProblemDetails CreateProblemDetails(
+        HttpContext context,
+        Exception exception,
+        string traceId
+    )
     {
         var (statusCode, title, detail, type) = GetErrorDetails(exception);
 
@@ -71,7 +84,8 @@ public class ProblemDetailsExceptionMiddleware
             title: title,
             detail: detail,
             type: type,
-            instance: context.Request.Path);
+            instance: context.Request.Path
+        );
 
         // Add custom extensions
         problemDetails.Extensions["traceId"] = traceId;
@@ -93,7 +107,9 @@ public class ProblemDetailsExceptionMiddleware
         return problemDetails;
     }
 
-    private static (int statusCode, string title, string detail, string type) GetErrorDetails(Exception exception)
+    private static (int statusCode, string title, string detail, string type) GetErrorDetails(
+        Exception exception
+    )
     {
         return exception switch
         {
@@ -118,6 +134,13 @@ public class ProblemDetailsExceptionMiddleware
                 "https://tools.ietf.org/html/rfc7231#section-6.5.1"
             ),
 
+            KeyNotFoundException => (
+                404,
+                "Not Found",
+                "The requested resource was not found.",
+                "https://tools.ietf.org/html/rfc7231#section-6.5.4"
+            ),
+
             TimeoutException => (
                 408,
                 "Request Timeout",
@@ -137,7 +160,7 @@ public class ProblemDetailsExceptionMiddleware
                 "Internal Server Error",
                 "An error occurred while processing your request.",
                 "https://tools.ietf.org/html/rfc7231#section-6.6.1"
-            )
+            ),
         };
     }
 }

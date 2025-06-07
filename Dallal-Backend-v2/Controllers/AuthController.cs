@@ -173,6 +173,8 @@ public class AuthController : ControllerBase
                 Name = user.Name,
                 Email = user.Email,
                 Type = userType,
+                Phone = user.Phone,
+                PreferredLanguage = user.PreferredLanguage,
             },
         };
         return response;
