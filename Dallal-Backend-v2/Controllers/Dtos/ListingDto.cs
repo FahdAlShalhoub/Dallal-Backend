@@ -1,4 +1,5 @@
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Enums;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
@@ -14,9 +15,9 @@ public class ListingDto
     public int BedroomCount { get; set; }
     public int BathroomCount { get; set; }
     public decimal AreaInMetersSq { get; set; }
-    public string ListingType { get; set; }
-    public string PropertyType { get; set; }
-    public string? RentalContractPeriod { get; set; }
+    public ListingType ListingType { get; set; }
+    public PropertyType PropertyType { get; set; }
+    public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;
     public decimal PricePerYear { get; set; } = 0;
 }

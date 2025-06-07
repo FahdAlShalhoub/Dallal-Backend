@@ -1,36 +1,53 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Google.Apis.Requests;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder
+    .Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure JSON serialization to convert enums to strings
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
+builder.Services.AddOpenApi();
 
 if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 {
     string? databaseConnectionString = builder.Configuration.GetConnectionString("Default");
-    Trace.Assert(!string.IsNullOrEmpty(databaseConnectionString), "Database connection string not found");
+    Trace.Assert(
+        !string.IsNullOrEmpty(databaseConnectionString),
+        "Database connection string not found"
+    );
     var dataSourceBuilder = new NpgsqlDataSourceBuilder(databaseConnectionString);
     dataSourceBuilder.EnableDynamicJson();
     var dataSource = dataSourceBuilder.Build();
 
     builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql(dataSource).UseSeeding(DatabaseContext.Seed()));
+        opt.UseNpgsql(dataSource).UseSeeding(DatabaseContext.Seed())
+    );
 
     string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
     Trace.Assert(!string.IsNullOrEmpty(jwtSecret), "JWTSecret not found");
     var jwt = new JwtService(jwtSecret);
     builder.Services.AddSingleton(jwt);
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
+    builder
+        .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = jwt.GetTokenValidationParameters();
+        });
 
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
@@ -53,10 +70,20 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 }
 else
 {
-    builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql());
+    builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseNpgsql());
 }
 
+builder.Services.Configure<RequestLocalizationOptions>(i =>
+{
+    i.SupportedCultures = [new("en"), new("ar")];
+    i.SupportedUICultures = [new("en"), new("ar")];
+});
+
+// Configure HTTP JSON options for consistent enum serialization
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 builder.Services.AddAuthorization();
 
@@ -71,6 +98,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
+app.UseMiddleware<RequestLocalizationMiddleware>();
 
 app.UseAuthorization();
 app.UseAuthentication();

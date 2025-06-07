@@ -272,3 +272,4 @@ src/Dallal.Blazor.Server.Tiered/Logs/*
 # IdentityServer temp files
 tempkey.rsa
 tempkey.jwk
+.vscode
