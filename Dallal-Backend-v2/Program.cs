@@ -35,6 +35,21 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
     builder.Services.AddSingleton(new FirebaseTokenVerifier(firebaseAuth));
+
+    string? containerName = builder.Configuration.GetRequiredSection("S3")["ContainerName"];
+    Trace.Assert(!string.IsNullOrEmpty(containerName), "S3 container not found");
+    string? region = builder.Configuration.GetRequiredSection("S3")["Region"];
+    Trace.Assert(!string.IsNullOrEmpty(region), "S3 region not found");
+    string? secretAccessKey = builder.Configuration.GetRequiredSection("S3")["SecretAccessKey"];
+    Trace.Assert(!string.IsNullOrEmpty(secretAccessKey), "S3 secret access key not found");
+    string? accessKeyId = builder.Configuration.GetRequiredSection("S3")["AccessKeyId"];
+    Trace.Assert(!string.IsNullOrEmpty(accessKeyId), "S3 access key id not found");
+    builder.Services.AddSingleton(new S3(
+        containerName,
+        region,
+        secretAccessKey,
+        accessKeyId
+    ));
 }
 else
 {
