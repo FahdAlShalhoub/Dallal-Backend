@@ -121,21 +121,29 @@ public class AuthController : ControllerBase
         throw new UnauthorizedAccessException("Invalid User Type");
     }
 
-    [HttpPost("buyer/login")]
+    [HttpPost("login")]
     [ProducesResponseType(typeof(AuthenticatedUser), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
     {
-        Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(buyer =>
-            buyer.Email == request.Email
-        );
-        if (buyer == null || BCrypt.Net.BCrypt.Verify(request.Password, buyer.Password))
+        BaseUser? user = request.UserType switch
         {
+            UserType.Buyer => await _context.Buyers.SingleOrDefaultAsync(buyer =>
+                buyer.Email == request.Email
+            ),
+            UserType.Broker => await _context.Brokers.SingleOrDefaultAsync(broker =>
+                broker.Email == request.Email
+            ),
+            UserType.Admin => await _context.Admins.SingleOrDefaultAsync(admin =>
+                admin.Email == request.Email
+            ),
+            _ => throw new UnauthorizedAccessException("Invalid User Type"),
+        };
+        if (user == null || BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
             throw new UnauthorizedAccessException("Invalid Email or Password");
-        }
 
-        return CreateToken(buyer);
+        return CreateToken(user);
     }
 
     private AuthenticatedUser CreateToken(BaseUser user)
