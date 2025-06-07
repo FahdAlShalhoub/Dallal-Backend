@@ -151,14 +151,29 @@ public class AuthController : DallalController
         return CreateToken(user);
     }
 
-    [HttpPut("update-language")]
+    [HttpPut("info")]
     [Authorize]
-    public async Task<UserInfo> UpdateLanguage([FromBody] UpdateLanguageRequest request)
+    public async Task<UserInfo> UpdateLanguage([FromBody] UpdateUserRequest request)
     {
+        if (request.Language is null && request.Name is null)
+        {
+            throw new BadHttpRequestException("Must provide at least one property to update for the user info");
+        }
+
         var user =
             await _context.Users.FirstAsync(i => i.Id == UserId)
             ?? throw new Exception("User not found");
-        user.PreferredLanguage = request.Language;
+
+        if (request.Language != null)
+        {
+            user.PreferredLanguage = request.Language;
+        }
+
+        if (request.Name != null)
+        {
+            user.Name = request.Name;
+        }
+
         await _context.SaveChangesAsync();
         return GenerateUserInfoDto(user, UserType.Buyer);
     }
@@ -192,14 +207,17 @@ public class AuthController : DallalController
     {
         return new UserInfo
         {
-            Image = user.ProfileImage,
-            Name = user.Name,
-            Email = user.Email,
+            Image = user.ProfileImage!,
+            Name = user.Name!,
+            Email = user.Email!,
             Type = userType,
             Phone = user.Phone,
-            PreferredLanguage = user.PreferredLanguage,
+            PreferredLanguage = user.PreferredLanguage
         };
     }
 }
 
-public record struct UpdateLanguageRequest(string Language);
+public record struct UpdateUserRequest(
+    string? Name,
+    string? Language
+);
