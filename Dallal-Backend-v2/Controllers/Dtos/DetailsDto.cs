@@ -1,4 +1,4 @@
-using Dallal_Backend_v2.Enums;
+using Dallal_Backend_v2.Entities.Enums;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 

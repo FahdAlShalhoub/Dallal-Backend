@@ -1,7 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Dallal_Backend_v2.Controllers.Dtos;
-using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Enums;
+using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using FirebaseAdmin.Auth;
@@ -18,7 +19,11 @@ public class AuthController : ControllerBase
     private readonly JwtService _jwtService;
     private readonly DatabaseContext _context;
 
-    public AuthController(FirebaseTokenVerifier firebaseTokenVerifier, JwtService jwtService, DatabaseContext context)
+    public AuthController(
+        FirebaseTokenVerifier firebaseTokenVerifier,
+        JwtService jwtService,
+        DatabaseContext context
+    )
     {
         _firebaseTokenVerifier = firebaseTokenVerifier;
         _jwtService = jwtService;
@@ -51,7 +56,10 @@ public class AuthController : ControllerBase
                 familyName ??= "";
                 string fullName;
 
-                if (!string.IsNullOrEmpty((string) givenName) && !string.IsNullOrEmpty((string) familyName))
+                if (
+                    !string.IsNullOrEmpty((string)givenName)
+                    && !string.IsNullOrEmpty((string)familyName)
+                )
                 {
                     fullName = $"{givenName} {familyName}";
                 }
@@ -65,11 +73,11 @@ public class AuthController : ControllerBase
                     Id = new Guid(),
                     Email = email,
                     Name = fullName,
-                    ProfileImage = (string) image,
+                    ProfileImage = (string)image,
                     Password = "oAuth User",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    DeletedAt = null
+                    DeletedAt = null,
                 };
                 await _context.Buyers.AddAsync(buyer);
                 await _context.SaveChangesAsync();
@@ -89,7 +97,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
     {
-        Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
+        Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(buyer =>
+            buyer.Email == request.Email
+        );
         if (buyer == null || BCrypt.Net.BCrypt.Verify(request.Password, buyer.Password))
         {
             throw new UnauthorizedAccessException("Invalid Email or Password");
@@ -98,24 +108,34 @@ public class AuthController : ControllerBase
         return CreateToken(buyer);
     }
 
-    private AuthenticatedUser CreateToken(Buyer buyer)
+    private AuthenticatedUser CreateToken(BaseUser user)
     {
-        var claims = new[]
+        List<Claim> claims =
+        [
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        ];
+
+        UserType userType = user switch
         {
-            new Claim(JwtRegisteredClaimNames.Sub, buyer.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            Buyer => UserType.Buyer,
+            Broker => UserType.Broker,
+            Admin => UserType.Admin,
+            _ => throw new Exception("Invalid User Type"),
         };
+
+        claims.Add(new Claim(ClaimTypes.Role, userType.ToString()));
 
         var response = new AuthenticatedUser
         {
             AccessToken = _jwtService.GenerateToken(claims),
             User = new UserInfo
             {
-                Image = buyer.ProfileImage,
-                Name = buyer.Name,
-                Email = buyer.Email,
-                Type = "Buyer"
-            }
+                Image = user.ProfileImage,
+                Name = user.Name,
+                Email = user.Email,
+                Type = userType,
+            },
         };
         return response;
     }

@@ -1,11 +1,14 @@
 using Dallal_Backend_v2.Entities;
-using Dallal_Backend_v2.Enums;
+using Dallal_Backend_v2.Entities.Enums;
+using Dallal_Backend_v2.Entities.Submissions;
+using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2;
 
 public class DatabaseContext : DbContext
 {
+    public DbSet<BaseUser> Users { get; set; }
     public DbSet<Broker> Brokers { get; set; }
     public DbSet<Buyer> Buyers { get; set; }
     public DbSet<Listing> Listings { get; set; }
@@ -13,6 +16,7 @@ public class DatabaseContext : DbContext
     public DbSet<DetailsDefinition> DetailsDefinitions { get; set; }
     public DbSet<DetailsDefinitionOption> DetailsDefinitionOptions { get; set; }
     public DbSet<Area> Areas { get; set; }
+    public DbSet<Submission> Submissions { get; set; }
 
     private static Guid riyadhId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static Guid NorthRiyadhId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -47,8 +51,8 @@ public class DatabaseContext : DbContext
         return (context, _) =>
         {
             CreateAreas(context);
-            CreateListings(context);
             CreateBrokers(context);
+            CreateListings(context);
 
             context.SaveChanges();
         };

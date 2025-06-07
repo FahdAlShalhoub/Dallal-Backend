@@ -1,3 +1,5 @@
+using Dallal_Backend_v2.Entities.Enums;
+
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
 public record AuthenticatedUser
@@ -8,8 +10,8 @@ public record AuthenticatedUser
 
 public record UserInfo
 {
-    public string Image { get; init; }
-    public string Name { get; init; }
-    public string Email { get; init; }
-    public string Type { get; init; }
+    public string? Image { get; init; }
+    public string? Name { get; init; }
+    public string? Email { get; init; }
+    public UserType Type { get; init; }
 }

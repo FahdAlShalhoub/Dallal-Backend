@@ -1,4 +1,4 @@
-using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
