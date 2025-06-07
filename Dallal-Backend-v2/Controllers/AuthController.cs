@@ -6,6 +6,7 @@ using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using FirebaseAdmin.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,7 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("auth")]
-public class AuthController : ControllerBase
+public class AuthController : DallalController
 {
     private readonly FirebaseTokenVerifier _firebaseTokenVerifier;
     private readonly JwtService _jwtService;
@@ -178,5 +179,17 @@ public class AuthController : ControllerBase
             },
         };
         return response;
+    }
+
+    [HttpPut("update-language")]
+    [Authorize]
+    public async Task<AuthenticatedUser> UpdateLanguage(string language)
+    {
+        var user =
+            await _context.Users.FirstAsync(i => i.Id == UserId)
+            ?? throw new Exception("User not found");
+        user.PreferredLanguage = language;
+        await _context.SaveChangesAsync();
+        return CreateToken(user);
     }
 }
