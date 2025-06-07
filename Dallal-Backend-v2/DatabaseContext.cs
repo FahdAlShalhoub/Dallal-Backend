@@ -11,6 +11,7 @@ public class DatabaseContext : DbContext
     public DbSet<BaseUser> Users { get; set; }
     public DbSet<Broker> Brokers { get; set; }
     public DbSet<Buyer> Buyers { get; set; }
+    public DbSet<Admin> Admins { get; set; }
     public DbSet<Listing> Listings { get; set; }
     public DbSet<ListingDetail> ListingDetails { get; set; }
     public DbSet<DetailsDefinition> DetailsDefinitions { get; set; }

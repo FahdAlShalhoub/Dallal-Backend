@@ -46,34 +46,41 @@ public class AuthController : ControllerBase
             firebaseToken.Claims.TryGetValue("picture", out object? image);
             firebaseToken.Claims.TryGetValue("given_name", out object? givenName);
             firebaseToken.Claims.TryGetValue("family_name", out object? familyName);
+            BaseUser user = await GetOrCreateUser(
+                email,
+                image,
+                givenName,
+                familyName,
+                request.UserType
+            );
 
+            return CreateToken(user);
+        }
+        catch (FirebaseAuthException)
+        {
+            throw new ArgumentException();
+        }
+    }
+
+    private async Task<BaseUser> GetOrCreateUser(
+        string email,
+        object? image,
+        object? givenName,
+        object? familyName,
+        UserType userType
+    )
+    {
+        if (userType == UserType.Buyer)
+        {
             Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(x => x.Email == email);
-
             if (buyer is null)
             {
-                image ??= "https://picsum.photos/500";
-                givenName ??= "";
-                familyName ??= "";
-                string fullName;
-
-                if (
-                    !string.IsNullOrEmpty((string)givenName)
-                    && !string.IsNullOrEmpty((string)familyName)
-                )
-                {
-                    fullName = $"{givenName} {familyName}";
-                }
-                else
-                {
-                    fullName = email;
-                }
-
                 buyer = new Buyer
                 {
                     Id = new Guid(),
                     Email = email,
-                    Name = fullName,
-                    ProfileImage = (string)image,
+                    Name = $"{givenName as string ?? ""} {familyName as string ?? ""}",
+                    ProfileImage = image as string,
                     Password = "oAuth User",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
@@ -82,13 +89,36 @@ public class AuthController : ControllerBase
                 await _context.Buyers.AddAsync(buyer);
                 await _context.SaveChangesAsync();
             }
-
-            return CreateToken(buyer);
+            return buyer;
         }
-        catch (FirebaseAuthException e)
+        else if (userType == UserType.Broker)
         {
-            throw new ArgumentException();
+            Broker? broker = await _context.Brokers.SingleOrDefaultAsync(x => x.Email == email);
+            if (broker is null)
+            {
+                broker = new Broker
+                {
+                    Id = new Guid(),
+                    Email = email,
+                    Status = BrokerStatus.Pending,
+                    Name = $"{givenName as string ?? ""} {familyName as string ?? ""}",
+                    ProfileImage = image as string,
+                    Password = "oAuth User",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    DeletedAt = null,
+                };
+                await _context.Brokers.AddAsync(broker);
+                await _context.SaveChangesAsync();
+            }
+            return broker;
         }
+        else if (userType == UserType.Admin)
+        {
+            Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
+            return admin ?? throw new UnauthorizedAccessException("Invalid User Type");
+        }
+        throw new UnauthorizedAccessException("Invalid User Type");
     }
 
     [HttpPost("buyer/login")]
