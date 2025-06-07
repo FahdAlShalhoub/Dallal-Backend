@@ -10,9 +10,9 @@ public record AuthenticatedUser
 
 public record UserInfo
 {
-    public string? Image { get; init; }
-    public string? Name { get; init; }
-    public string? Email { get; init; }
+    public string Image { get; init; }
+    public string Name { get; init; }
+    public string Email { get; init; }
     public UserType Type { get; init; }
     public string? Phone { get; init; }
     public string? PreferredLanguage { get; init; }
