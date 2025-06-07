@@ -1,5 +1,4 @@
 using Dallal_Backend_v2.Controllers.Dtos;
-using Dallal_Backend_v2.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,25 +14,30 @@ public class DetailsController : ControllerBase
     {
         _context = context;
     }
+
     [HttpGet]
-    public async Task<IActionResult> GetDetails()
+    public async Task<List<DetailsDefinitionDto>> GetDetails()
     {
-        var details = await _context
-            .LisitngDetails.Include(detail => detail.Listing)
+        var detailsDefinitions = await _context
+            .DetailsDefinitions.Include(i => i.Options)
             .ToListAsync();
 
-        return Ok(
-            details.Select(detail => new DetailDto
+        return
+        [
+            .. detailsDefinitions.Select(dd => new DetailsDefinitionDto
             {
-                Id = detail.Id,
-                ListingId = detail.ListingId,
-                Description = detail.Description,
-                Images = detail.Images.Select(image => new ImageDto
-                {
-                    Id = image.Id,
-                    Url = image.Url,
-                    Description = image.Description
-                }).ToList()
-            })
-        );
+                Id = dd.Id,
+                Name = new(dd.Name),
+                Type = dd.Type,
+                Options =
+                [
+                    .. dd.Options.Select(o => new DetailsDefinitionOptionDto
+                    {
+                        Id = o.Id,
+                        Name = new(o.Name),
+                    }),
+                ],
+            }),
+        ];
     }
+}
