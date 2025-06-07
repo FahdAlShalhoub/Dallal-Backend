@@ -71,11 +71,16 @@ public class AuthController : DallalController
         UserType userType
     )
     {
-        if (userType == UserType.Buyer)
+        switch (userType)
         {
-            Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(x => x.Email == email);
-            if (buyer is null)
+            case UserType.Buyer:
             {
+                Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(x => x.Email == email);
+                if (buyer is not null)
+                {
+                    return buyer;
+                }
+
                 buyer = new Buyer
                 {
                     Id = new Guid(),
@@ -89,15 +94,17 @@ public class AuthController : DallalController
                 };
                 await _context.Buyers.AddAsync(buyer);
                 await _context.SaveChangesAsync();
-            }
 
-            return buyer;
-        }
-        else if (userType == UserType.Broker)
-        {
-            Broker? broker = await _context.Brokers.SingleOrDefaultAsync(x => x.Email == email);
-            if (broker is null)
+                return buyer;
+            }
+            case UserType.Broker:
             {
+                Broker? broker = await _context.Brokers.SingleOrDefaultAsync(x => x.Email == email);
+                if (broker is not null)
+                {
+                    return broker;
+                }
+
                 broker = new Broker
                 {
                     Id = new Guid(),
@@ -112,18 +119,17 @@ public class AuthController : DallalController
                 };
                 await _context.Brokers.AddAsync(broker);
                 await _context.SaveChangesAsync();
+
+                return broker;
             }
-
-            return broker;
+            case UserType.Admin:
+            {
+                Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
+                return admin ?? throw new UnauthorizedAccessException("Invalid Email");
+            }
+            default:
+                throw new UnauthorizedAccessException("Invalid User Type");
         }
-
-        if (userType != UserType.Admin)
-        {
-            throw new UnauthorizedAccessException("Invalid User Type");
-        }
-
-        Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
-        return admin ?? throw new UnauthorizedAccessException("Invalid User Type");
     }
 
     [HttpPost("login")]
@@ -182,8 +188,8 @@ public class AuthController : DallalController
     {
         List<Claim> claims =
         [
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         ];
 
         UserType userType = user switch
