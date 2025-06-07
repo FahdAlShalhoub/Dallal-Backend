@@ -90,6 +90,7 @@ public class AuthController : DallalController
                 await _context.Buyers.AddAsync(buyer);
                 await _context.SaveChangesAsync();
             }
+
             return buyer;
         }
         else if (userType == UserType.Broker)
@@ -112,14 +113,17 @@ public class AuthController : DallalController
                 await _context.Brokers.AddAsync(broker);
                 await _context.SaveChangesAsync();
             }
+
             return broker;
         }
-        else if (userType == UserType.Admin)
+
+        if (userType != UserType.Admin)
         {
-            Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
-            return admin ?? throw new UnauthorizedAccessException("Invalid User Type");
+            throw new UnauthorizedAccessException("Invalid User Type");
         }
-        throw new UnauthorizedAccessException("Invalid User Type");
+
+        Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
+        return admin ?? throw new UnauthorizedAccessException("Invalid User Type");
     }
 
     [HttpPost("login")]
@@ -147,6 +151,18 @@ public class AuthController : DallalController
         return CreateToken(user);
     }
 
+    [HttpPut("update-language")]
+    [Authorize]
+    public async Task<UserInfo> UpdateLanguage([FromBody] UpdateLanguageRequest request)
+    {
+        var user =
+            await _context.Users.FirstAsync(i => i.Id == UserId)
+            ?? throw new Exception("User not found");
+        user.PreferredLanguage = request.Language;
+        await _context.SaveChangesAsync();
+        return GenerateUserInfoDto(user, UserType.Buyer);
+    }
+
     private AuthenticatedUser CreateToken(BaseUser user)
     {
         List<Claim> claims =
@@ -165,31 +181,25 @@ public class AuthController : DallalController
 
         claims.Add(new Claim(ClaimTypes.Role, userType.ToString()));
 
-        var response = new AuthenticatedUser
+        return new AuthenticatedUser
         {
             AccessToken = _jwtService.GenerateToken(claims),
-            User = new UserInfo
-            {
-                Image = user.ProfileImage,
-                Name = user.Name,
-                Email = user.Email,
-                Type = userType,
-                Phone = user.Phone,
-                PreferredLanguage = user.PreferredLanguage,
-            },
+            User = GenerateUserInfoDto(user, userType)
         };
-        return response;
     }
 
-    [HttpPut("update-language")]
-    [Authorize]
-    public async Task<AuthenticatedUser> UpdateLanguage(string language)
+    private static UserInfo GenerateUserInfoDto(BaseUser user, UserType userType)
     {
-        var user =
-            await _context.Users.FirstAsync(i => i.Id == UserId)
-            ?? throw new Exception("User not found");
-        user.PreferredLanguage = language;
-        await _context.SaveChangesAsync();
-        return CreateToken(user);
+        return new UserInfo
+        {
+            Image = user.ProfileImage,
+            Name = user.Name,
+            Email = user.Email,
+            Type = userType,
+            Phone = user.Phone,
+            PreferredLanguage = user.PreferredLanguage,
+        };
     }
 }
+
+public record struct UpdateLanguageRequest(string Language);
