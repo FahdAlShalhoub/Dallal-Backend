@@ -1,3 +1,5 @@
+using Dallal_Backend_v2.Enums;
+
 namespace Dallal_Backend_v2.Entities;
 
 public class Listing
@@ -27,9 +29,9 @@ public class Listing
 
             return RentalContractPeriod switch
             {
-                Entities.RentalContractPeriod.Day => PricePerContract * 365,
-                Entities.RentalContractPeriod.Month => PricePerContract * 12,
-                Entities.RentalContractPeriod.Year => PricePerContract,
+                Enums.RentalContractPeriod.Day => PricePerContract * 365,
+                Enums.RentalContractPeriod.Month => PricePerContract * 12,
+                Enums.RentalContractPeriod.Year => PricePerContract,
                 _ => throw new ArgumentOutOfRangeException(),
             };
         }
@@ -56,32 +58,4 @@ public class DetailsDefinitionOption
 {
     public Guid Id { get; set; }
     public LocalizedString Name { get; set; } = default!;
-}
-
-public enum MultipleSearchBehavior
-{
-    And,
-    Or,
-}
-
-public enum ListingType
-{
-    Rent,
-    Buy
-}
-
-public enum PropertyType
-{
-    Land,
-    Apartment,
-    Villa,
-    Floor,
-    OfficeSpace,
-}
-
-public enum RentalContractPeriod
-{
-    Day,
-    Month,
-    Year,
 }

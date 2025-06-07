@@ -1,4 +1,5 @@
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2;
@@ -8,6 +9,9 @@ public class DatabaseContext : DbContext
     public DbSet<Broker> Brokers { get; set; }
     public DbSet<Buyer> Buyers { get; set; }
     public DbSet<Listing> Listings { get; set; }
+    public DbSet<ListingDetail> ListingDetails { get; set; }
+    public DbSet<DetailsDefinition> DetailsDefinitions { get; set; }
+    public DbSet<DetailsDefinitionOption> DetailsDefinitionOptions { get; set; }
     public DbSet<Area> Areas { get; set; }
 
     private static Guid riyadhId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -17,21 +21,23 @@ public class DatabaseContext : DbContext
     private static Guid AlNaseemId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static Guid AlRawdahId = Guid.Parse("66666666-6666-6666-6666-666666666666");
 
-
     // Public constants for broker IDs to be referenced by other seed contributors
     private static readonly Guid BobBuilderId = Guid.Parse("b0b00000-0000-0000-0000-000000000001");
-    private static readonly Guid DoraExplorerId = Guid.Parse("d0d00000-0000-0000-0000-000000000002");
+    private static readonly Guid DoraExplorerId = Guid.Parse(
+        "d0d00000-0000-0000-0000-000000000002"
+    );
     private static readonly Guid AbdoId = Guid.Parse("abcd0000-0000-0000-0000-000000000003");
 
     public DatabaseContext(DbContextOptions<DatabaseContext> options)
-        : base(options)
-    {
-    }
+        : base(options) { }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
-        configurationBuilder.Properties<LocalizedString>(p => { p.HaveColumnType("jsonb"); });
+        configurationBuilder.Properties<LocalizedString>(p =>
+        {
+            p.HaveColumnType("jsonb");
+        });
 
         configurationBuilder.Properties<Enum>().HaveConversion<string>();
     }
@@ -66,7 +72,8 @@ public class DatabaseContext : DbContext
         string nameEn,
         string nameAr,
         Guid? parentId,
-        DbContext context)
+        DbContext context
+    )
     {
         var existingArea = context.Find<Area>(areaId);
         if (existingArea == null)
@@ -87,7 +94,7 @@ public class DatabaseContext : DbContext
                 Name = localizedName,
                 Parent = parent,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
             };
             context.Set<Area>().Add(area);
         }
@@ -230,31 +237,15 @@ public class DatabaseContext : DbContext
         }
     }
 
-
     private static void CreateBrokers(DbContext context)
     {
         // Create the brokers
-        CreateBroker(
-            BobBuilderId,
-            "bob.builder@dallal.com",
-            "Bob Builder",
-            context
-        );
-        CreateBroker(
-            DoraExplorerId,
-            "dora.explorer@dallal.com",
-            "Dora Explorer",
-            context
-        );
+        CreateBroker(BobBuilderId, "bob.builder@dallal.com", "Bob Builder", context);
+        CreateBroker(DoraExplorerId, "dora.explorer@dallal.com", "Dora Explorer", context);
         CreateBroker(AbdoId, "abdo@dallal.com", "Abdo Lost", context);
     }
 
-    private static void CreateBroker(
-        Guid id,
-        string email,
-        string name,
-        DbContext context
-    )
+    private static void CreateBroker(Guid id, string email, string name, DbContext context)
     {
         var existingBroker = context.Find<Broker>(id);
         if (existingBroker == null)
@@ -267,7 +258,7 @@ public class DatabaseContext : DbContext
                 Password = BCrypt.Net.BCrypt.HashPassword("12345678"),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                DeletedAt = null
+                DeletedAt = null,
             };
             context.Set<Broker>().Add(broker);
         }

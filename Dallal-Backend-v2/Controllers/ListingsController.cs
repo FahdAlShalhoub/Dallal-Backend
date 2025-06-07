@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
