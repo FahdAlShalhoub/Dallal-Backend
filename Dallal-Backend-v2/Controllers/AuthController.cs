@@ -70,7 +70,7 @@ public class AuthController : DallalController
         object? givenName,
         object? familyName,
         UserType userType,
-        string? preferredLanguage
+        string preferredLanguage
     )
     {
         switch (userType)
@@ -83,11 +83,18 @@ public class AuthController : DallalController
                     return buyer;
                 }
 
+                var fullName = $"{givenName as string ?? ""} {familyName as string ?? ""}";
+
+                if (givenName == null && familyName == null)
+                {
+                    fullName = email;
+                }
+
                 buyer = new Buyer
                 {
                     Id = new Guid(),
                     Email = email,
-                    Name = $"{givenName as string ?? ""} {familyName as string ?? ""}",
+                    Name = fullName,
                     ProfileImage = image as string,
                     Password = "oAuth User",
                     PreferredLanguage = preferredLanguage,
@@ -108,12 +115,19 @@ public class AuthController : DallalController
                     return broker;
                 }
 
+                var fullName = $"{givenName as string ?? ""} {familyName as string ?? ""}";
+
+                if (givenName == null && familyName == null)
+                {
+                    fullName = email;
+                }
+
                 broker = new Broker
                 {
                     Id = new Guid(),
                     Email = email,
                     Status = BrokerStatus.Pending,
-                    Name = $"{givenName as string ?? ""} {familyName as string ?? ""}",
+                    Name = fullName,
                     ProfileImage = image as string,
                     Password = "oAuth User",
                     CreatedAt = DateTime.UtcNow,
