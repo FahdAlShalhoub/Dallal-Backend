@@ -52,7 +52,8 @@ public class AuthController : DallalController
                 image,
                 givenName,
                 familyName,
-                request.UserType
+                request.UserType,
+                request.PreferredLanguage
             );
 
             return CreateToken(user);
@@ -68,7 +69,8 @@ public class AuthController : DallalController
         object? image,
         object? givenName,
         object? familyName,
-        UserType userType
+        UserType userType,
+        string? preferredLanguage
     )
     {
         switch (userType)
@@ -88,6 +90,7 @@ public class AuthController : DallalController
                     Name = $"{givenName as string ?? ""} {familyName as string ?? ""}",
                     ProfileImage = image as string,
                     Password = "oAuth User",
+                    PreferredLanguage = preferredLanguage,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     DeletedAt = null,
@@ -115,6 +118,7 @@ public class AuthController : DallalController
                     Password = "oAuth User",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
+                    PreferredLanguage = preferredLanguage,
                     DeletedAt = null,
                 };
                 await _context.Brokers.AddAsync(broker);

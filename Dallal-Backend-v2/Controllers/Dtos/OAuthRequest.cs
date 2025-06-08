@@ -6,4 +6,5 @@ public record OAuthRequest
 {
     public string idToken { get; init; }
     public UserType UserType { get; init; }
+    public string PreferredLanguage { get; init; }
 }
