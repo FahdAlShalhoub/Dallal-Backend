@@ -21,6 +21,8 @@ public class Listing
     public PropertyType PropertyType { get; set; }
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;
+    public DateTime CreatedAt{ get; set; }
+    public DateTime UpdatedAt { get; set; }
     public decimal PricePerYear
     {
         get

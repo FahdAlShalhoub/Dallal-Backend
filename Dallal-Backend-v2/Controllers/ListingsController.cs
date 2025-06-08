@@ -54,6 +54,7 @@ public class ListingsController : ControllerBase
                 RentalContractPeriod = listing.RentalContractPeriod,
                 Details = null,
                 PricePerYear = listing.PricePerYear,
+                CreatedAt = listing.CreatedAt
             })
         );
     }

@@ -20,6 +20,7 @@ public class ListingDto
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;
     public decimal PricePerYear { get; set; } = 0;
+    public DateTime CreatedAt { get; set; }
 }
 
 public record BrokerDto

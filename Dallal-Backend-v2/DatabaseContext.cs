@@ -237,6 +237,8 @@ public class DatabaseContext : DbContext
                 BedroomCount = bedroomCount,
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             context.Set<Listing>().Add(listing);
         }
