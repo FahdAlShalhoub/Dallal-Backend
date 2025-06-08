@@ -11,5 +11,5 @@ public abstract class BaseUser
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
-    public string? PreferredLanguage { get; set; }
+    public string PreferredLanguage { get; set; }
 }

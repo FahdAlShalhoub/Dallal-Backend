@@ -264,6 +264,7 @@ public class DatabaseContext : DbContext
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 DeletedAt = null,
+                PreferredLanguage = "en"
             };
             context.Set<Broker>().Add(broker);
         }
