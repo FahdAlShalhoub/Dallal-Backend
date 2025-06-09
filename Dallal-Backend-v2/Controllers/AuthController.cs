@@ -159,16 +159,31 @@ public class AuthController(
             ),
             _ => throw new UnauthorizedAccessException("Invalid User Type"),
         };
-        Console.WriteLine(
-            $"User Type: {request.UserType}, Email: {request.Email}, User: {user?.Id}"
-        );
+
         if (user == null)
             throw new UnauthorizedAccessException("Invalid Email or Password");
 
+        if (user.LockoutUntil != null && user.LockoutUntil > DateTime.UtcNow)
+        {
+            throw new UnauthorizedAccessException(
+                $"Account is locked until {user.LockoutUntil.Value}"
+            );
+        }
+
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
         {
+            user.LoginAttempts++;
+            if (user.LoginAttempts >= 3)
+            {
+                user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
+            }
+            await _context.SaveChangesAsync();
             throw new UnauthorizedAccessException("Invalid Email or Password");
         }
+
+        user.LoginAttempts = 0;
+        user.LockoutUntil = null;
+        await _context.SaveChangesAsync();
 
         return CreateToken(user);
     }

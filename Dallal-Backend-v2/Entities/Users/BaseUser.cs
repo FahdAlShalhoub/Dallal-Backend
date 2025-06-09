@@ -12,4 +12,6 @@ public abstract class BaseUser
     public DateTime UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string PreferredLanguage { get; set; }
+    public int LoginAttempts { get; set; }
+    public DateTime? LockoutUntil { get; set; }
 }
