@@ -3,6 +3,12 @@ using Dallal_Backend_v2.Entities.Enums;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
+public class GetListingsResponse
+{
+    public int RecentListingsCount { get; set; }
+    public PaginatedList<ListingDto> ListingsList { get; set; }
+}
+
 public class ListingDto
 {
     public Guid Id { get; set; }

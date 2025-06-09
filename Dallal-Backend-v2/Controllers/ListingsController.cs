@@ -6,15 +6,8 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("listings")]
-public class ListingsController : DallalController
+public class ListingsController(DatabaseContext context) : DallalController
 {
-    private readonly DatabaseContext _context;
-
-    public ListingsController(DatabaseContext context)
-    {
-        _context = context;
-    }
-
     [HttpGet("recent")]
     public async Task<IActionResult> GetRecentListings()
     {
@@ -22,11 +15,11 @@ public class ListingsController : DallalController
     }
 
     [HttpGet(Name = "GetListings")]
-    [ProducesResponseType(typeof(PaginatedList<ListingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetListingsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Listings(int pageIndex, int pageSize)
     {
-        var listings = await _context
+        var listings = await context
             .Listings
             .Include(listing => listing.Broker)
             .Include(listing => listing.Area)
@@ -58,9 +51,15 @@ public class ListingsController : DallalController
             })
             .ToListAsync();
 
-        var count = await _context.Listings.CountAsync();
+        var count = await context.Listings.CountAsync();
         var totalPages = (int) Math.Ceiling(count / (double) pageSize);
 
-        return Ok(new PaginatedList<ListingDto>(listings, pageIndex, totalPages));
+        var response = new GetListingsResponse
+        {
+            RecentListingsCount = await context.Listings.Where(listing => listing.CreatedAt > DateTime.Now.AddDays(-4)).CountAsync(),
+            ListingsList = new PaginatedList<ListingDto>(listings, pageIndex, totalPages)
+        };
+
+        return Ok(response);
     }
 }
