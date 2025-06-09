@@ -6,7 +6,7 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("listings")]
-public class ListingsController : ControllerBase
+public class ListingsController : DallalController
 {
     private readonly DatabaseContext _context;
 

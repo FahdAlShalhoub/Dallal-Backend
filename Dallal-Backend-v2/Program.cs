@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,12 +62,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     Trace.Assert(!string.IsNullOrEmpty(secretAccessKey), "S3 secret access key not found");
     string? accessKeyId = builder.Configuration.GetRequiredSection("S3")["AccessKeyId"];
     Trace.Assert(!string.IsNullOrEmpty(accessKeyId), "S3 access key id not found");
-    builder.Services.AddSingleton(new S3(
-        containerName,
-        region,
-        secretAccessKey,
-        accessKeyId
-    ));
+    builder.Services.AddSingleton(new S3(containerName, region, secretAccessKey, accessKeyId));
 }
 else
 {
@@ -93,6 +89,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();

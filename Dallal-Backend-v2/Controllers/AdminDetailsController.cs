@@ -9,7 +9,7 @@ namespace Dallal_Backend_v2.Controllers;
 [ApiController]
 [Authorize(Roles = "admin")]
 [Route("details")]
-public class AdminDetailsController : ControllerBase
+public class AdminDetailsController : DallalController
 {
     private readonly DatabaseContext _context;
 

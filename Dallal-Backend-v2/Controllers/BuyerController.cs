@@ -6,7 +6,7 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class BuyerController : ControllerBase
+public class BuyerController : DallalController
 {
     [HttpGet(Name = "GetBuyers")]
     public async Task<List<Buyer>> Get(DatabaseContext context)

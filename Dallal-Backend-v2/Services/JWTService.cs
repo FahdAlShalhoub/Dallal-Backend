@@ -11,12 +11,15 @@ public class JwtService(string jwtSecretKey)
 
     public string GenerateToken(IEnumerable<Claim> claims)
     {
-        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
-            issuer: "your-issuer",
-            audience: "your-audience",
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(30),
-            signingCredentials: new SigningCredentials(_jwtSecretKey, SecurityAlgorithms.HmacSha256))
+        return new JwtSecurityTokenHandler().WriteToken(
+            new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: new SigningCredentials(
+                    _jwtSecretKey,
+                    SecurityAlgorithms.HmacSha256
+                )
+            )
         );
     }
 
@@ -30,7 +33,7 @@ public class JwtService(string jwtSecretKey)
             ValidateIssuerSigningKey = true,
             ValidIssuer = "your-issuer",
             ValidAudience = "your-audience",
-            IssuerSigningKey = _jwtSecretKey
+            IssuerSigningKey = _jwtSecretKey,
         };
     }
 }

@@ -14,23 +14,13 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("auth")]
-public class AuthController : DallalController
+public class AuthController(
+    FirebaseTokenVerifier _firebaseTokenVerifier,
+    JwtService _jwtService,
+    DatabaseContext _context,
+    IConfiguration _configuration
+) : DallalController
 {
-    private readonly FirebaseTokenVerifier _firebaseTokenVerifier;
-    private readonly JwtService _jwtService;
-    private readonly DatabaseContext _context;
-
-    public AuthController(
-        FirebaseTokenVerifier firebaseTokenVerifier,
-        JwtService jwtService,
-        DatabaseContext context
-    )
-    {
-        _firebaseTokenVerifier = firebaseTokenVerifier;
-        _jwtService = jwtService;
-        _context = context;
-    }
-
     [HttpPost("oauth")]
     public async Task<AuthenticatedUser> OAuth([FromBody] OAuthRequest request)
     {
@@ -169,8 +159,16 @@ public class AuthController : DallalController
             ),
             _ => throw new UnauthorizedAccessException("Invalid User Type"),
         };
-        if (user == null || BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+        Console.WriteLine(
+            $"User Type: {request.UserType}, Email: {request.Email}, User: {user?.Id}"
+        );
+        if (user == null)
             throw new UnauthorizedAccessException("Invalid Email or Password");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+        {
+            throw new UnauthorizedAccessException("Invalid Email or Password");
+        }
 
         return CreateToken(user);
     }
@@ -181,7 +179,9 @@ public class AuthController : DallalController
     {
         if (request.Language is null && request.Name is null)
         {
-            throw new BadHttpRequestException("Must provide at least one property to update for the user info");
+            throw new BadHttpRequestException(
+                "Must provide at least one property to update for the user info"
+            );
         }
 
         var user =
@@ -206,8 +206,12 @@ public class AuthController : DallalController
     {
         List<Claim> claims =
         [
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(
+                JwtRegisteredClaimNames.Iss,
+                _configuration["JWT:Issuer"] ?? throw new Exception("JWT Issuer not found")
+            ),
         ];
 
         UserType userType = user switch
@@ -218,12 +222,12 @@ public class AuthController : DallalController
             _ => throw new Exception("Invalid User Type"),
         };
 
-        claims.Add(new Claim(ClaimTypes.Role, userType.ToString()));
+        claims.Add(new Claim("role", userType.ToString()));
 
         return new AuthenticatedUser
         {
             AccessToken = _jwtService.GenerateToken(claims),
-            User = GenerateUserInfoDto(user, userType)
+            User = GenerateUserInfoDto(user, userType),
         };
     }
 
@@ -236,12 +240,9 @@ public class AuthController : DallalController
             Email = user.Email!,
             Type = userType,
             Phone = user.Phone,
-            PreferredLanguage = user.PreferredLanguage
+            PreferredLanguage = user.PreferredLanguage,
         };
     }
 }
 
-public record struct UpdateUserRequest(
-    string? Name,
-    string? Language
-);
+public record struct UpdateUserRequest(string? Name, string? Language);
