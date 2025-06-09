@@ -40,8 +40,10 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     );
 
     string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
+    string? issuer = builder.Configuration.GetRequiredSection("JWT")["Issuer"];
     Trace.Assert(!string.IsNullOrEmpty(jwtSecret), "JWTSecret not found");
-    var jwt = new JwtService(jwtSecret);
+    Trace.Assert(!string.IsNullOrEmpty(issuer), "JWT Issuer not found");
+    var jwt = new JwtService(jwtSecret, issuer);
     builder.Services.AddSingleton(jwt);
     builder
         .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -63,6 +65,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     string? accessKeyId = builder.Configuration.GetRequiredSection("S3")["AccessKeyId"];
     Trace.Assert(!string.IsNullOrEmpty(accessKeyId), "S3 access key id not found");
     builder.Services.AddSingleton(new S3(containerName, region, secretAccessKey, accessKeyId));
+
+    builder.Services.AddScoped<SubmissionService>();
 }
 else
 {
@@ -81,7 +85,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(i => { });
 
 var app = builder.Build();
 
@@ -97,9 +101,12 @@ app.UseHttpsRedirection();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<RequestLocalizationMiddleware>();
 
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapControllers();
+if (app.Environment.IsDevelopment())
+    app.MapControllers().AllowAnonymous();
+else
+    app.MapControllers();
 
 app.Run();
