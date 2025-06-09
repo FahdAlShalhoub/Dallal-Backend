@@ -22,17 +22,17 @@ public class ListingsController : DallalController
     }
 
     [HttpGet(Name = "GetListings")]
-    [ProducesResponseType(typeof(ListingDto[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedList<ListingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Listings()
+    public async Task<IActionResult> Listings(int pageIndex, int pageSize)
     {
         var listings = await _context
-            .Listings.Include(listing => listing.Broker)
+            .Listings
+            .Include(listing => listing.Broker)
             .Include(listing => listing.Area)
-            .ToListAsync();
-
-        return Ok(
-            listings.Select(listing => new ListingDto
+            .OrderBy(b => b.Id)
+            .Skip((pageIndex - 1) * pageSize)
+            .Select(listing => new ListingDto
             {
                 Id = listing.Id,
                 Name = listing.Name,
@@ -56,6 +56,11 @@ public class ListingsController : DallalController
                 PricePerYear = listing.PricePerYear,
                 CreatedAt = listing.CreatedAt
             })
-        );
+            .ToListAsync();
+
+        var count = await _context.Listings.CountAsync();
+        var totalPages = (int) Math.Ceiling(count / (double) pageSize);
+
+        return Ok(new PaginatedList<ListingDto>(listings, pageIndex, totalPages));
     }
 }
