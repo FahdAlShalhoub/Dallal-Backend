@@ -3,6 +3,7 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Dallal_Backend_v2;
 
@@ -45,6 +46,17 @@ public class DatabaseContext : DbContext
         });
 
         configurationBuilder.Properties<Enum>().HaveConversion<string>();
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Listing>(listing =>
+        {
+            listing.HasIndex(e => e.CreatedAt)
+                .IsDescending();
+        });
+
     }
 
     public static Action<DbContext, bool> Seed()
