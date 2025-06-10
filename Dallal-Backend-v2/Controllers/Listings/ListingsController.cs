@@ -16,7 +16,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
     }
 
     [HttpGet(Name = "GetListings")]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    // [ProducesResponseType(typeof(ProblemDetails)j, StatusCodes.Status500InternalServerError)]
     public async Task<GetListingsResponse> Listings(int pageIndex, int pageSize)
     {
         var listings = await _context
@@ -24,6 +24,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
             .Include(listing => listing.Area)
             .OrderBy(b => b.Id)
             .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
             .Select(listing => new ListingDto
             {
                 Id = listing.Id,
