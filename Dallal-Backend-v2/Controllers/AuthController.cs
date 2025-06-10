@@ -237,7 +237,7 @@ public class AuthController(
             _ => throw new Exception("Invalid User Type"),
         };
 
-        claims.Add(new Claim("role", userType.ToString()));
+        claims.Add(new Claim(ClaimTypes.Role, userType.ToString()));
 
         return new AuthenticatedUser
         {

@@ -250,7 +250,7 @@ public class DatabaseContext : DbContext
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
             };
             context.Set<Listing>().Add(listing);
         }
@@ -278,7 +278,7 @@ public class DatabaseContext : DbContext
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 DeletedAt = null,
-                PreferredLanguage = "en"
+                PreferredLanguage = "en",
             };
             context.Set<Broker>().Add(broker);
         }

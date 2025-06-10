@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Dallal_Backend_v2.Services;
 
-public class JwtService(string jwtSecretKey)
+public class JwtService(string jwtSecretKey, string issuer)
 {
     private readonly SymmetricSecurityKey _jwtSecretKey = new(Encoding.UTF8.GetBytes(jwtSecretKey));
 
@@ -28,12 +28,12 @@ public class JwtService(string jwtSecretKey)
         return new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "your-issuer",
-            ValidAudience = "your-audience",
+            ValidIssuer = issuer,
             IssuerSigningKey = _jwtSecretKey,
+            RoleClaimType = ClaimTypes.Role,
         };
     }
 }
