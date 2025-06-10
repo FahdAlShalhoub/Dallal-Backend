@@ -56,7 +56,7 @@ public class ListingsController(DatabaseContext context) : DallalController
 
         var response = new GetListingsResponse
         {
-            RecentListingsCount = await context.Listings.Where(listing => listing.CreatedAt > DateTime.Now.AddDays(-4)).CountAsync(),
+            RecentListingsCount = await context.Listings.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4)).CountAsync(),
             ListingsList = new PaginatedList<ListingDto>(listings, pageIndex, totalPages)
         };
 
