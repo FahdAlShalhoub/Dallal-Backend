@@ -69,7 +69,7 @@ public class DatabaseContext : DbContext
         {
             CreateAreas(context);
             CreateBrokers(context);
-            CreateListings(context);
+            // CreateListings(context);
 
             context.SaveChanges();
         };
