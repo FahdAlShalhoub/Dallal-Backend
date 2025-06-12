@@ -68,7 +68,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 }
 else
 {
-    builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseNpgsql());
+    builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite()));
 }
 
 builder.Services.Configure<RequestLocalizationOptions>(i =>
