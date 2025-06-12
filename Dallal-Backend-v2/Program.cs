@@ -1,11 +1,9 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
-using Google.Apis.Requests;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +66,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 }
 else
 {
-    builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite()));
+    builder.Services.AddDbContext<DatabaseContext>(opt =>
+        opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite()));
 }
 
 builder.Services.Configure<RequestLocalizationOptions>(i =>
