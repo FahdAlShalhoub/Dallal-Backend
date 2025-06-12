@@ -4,5 +4,5 @@ public enum DetailDefinitionSearchBehavior
 {
     and,
     or,
-    none,
+    hidden,
 }

@@ -296,7 +296,7 @@ public static class DatabaseSeeder
             "Year Built",
             "سنة البناء",
             DetailDefinitionType.Year,
-            DetailDefinitionSearchBehavior.and,
+            DetailDefinitionSearchBehavior.or,
             new List<PropertyType>
             {
                 PropertyType.Apartment,
@@ -315,7 +315,7 @@ public static class DatabaseSeeder
             "Floor Number",
             "رقم الطابق",
             DetailDefinitionType.Number,
-            DetailDefinitionSearchBehavior.and,
+            DetailDefinitionSearchBehavior.or,
             new List<PropertyType>
             {
                 PropertyType.Apartment,
@@ -333,7 +333,7 @@ public static class DatabaseSeeder
             "Has Parking",
             "يوجد موقف سيارات",
             DetailDefinitionType.Boolean,
-            DetailDefinitionSearchBehavior.and,
+            DetailDefinitionSearchBehavior.or,
             [],
             false,
             false,
@@ -346,7 +346,7 @@ public static class DatabaseSeeder
             "Property Scenery",
             "وصف المنظر",
             DetailDefinitionType.Text,
-            DetailDefinitionSearchBehavior.none,
+            DetailDefinitionSearchBehavior.hidden,
             null,
             false,
             false,

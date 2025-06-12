@@ -14,7 +14,7 @@ public class DetailsDefinition
     public bool IsHidden { get; set; }
     public bool IsHiddenInSearch
     {
-        get => SearchBehavior == DetailDefinitionSearchBehavior.none || IsHidden;
+        get => SearchBehavior == DetailDefinitionSearchBehavior.hidden || IsHidden;
         private set { }
     }
 }
