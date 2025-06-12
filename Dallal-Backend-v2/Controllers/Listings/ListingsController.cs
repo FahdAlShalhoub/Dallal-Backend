@@ -1,5 +1,8 @@
+using System.Linq.Expressions;
 using Dallal_Backend_v2.Controllers.Dtos;
-using Microsoft.AspNetCore.Identity;
+using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Enums;
+using Dallal_Backend_v2.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,58 +13,271 @@ namespace Dallal_Backend_v2.Controllers;
 public class ListingsController(DatabaseContext _context) : DallalController
 {
     [HttpGet("recent")]
-    public async Task<IActionResult> GetRecentListings()
+    public async Task<GetRecentListingsResponse> GetRecentListings()
     {
-        return Ok();
+        var query = _context.Listings.AsQueryable();
+        query = query.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4));
+        var count = await query.CountAsync();
+        var listings = await query
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Definition)
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Option)
+            .Select(SelectToDto())
+            .ToListAsync();
+        return new GetRecentListingsResponse
+        {
+            RecentListingsCount = count,
+            ListingsList = listings,
+        };
     }
 
     [HttpGet(Name = "GetListings")]
-    // [ProducesResponseType(typeof(ProblemDetails)j, StatusCodes.Status500InternalServerError)]
-    public async Task<GetListingsResponse> Listings(int pageIndex, int pageSize)
+    public async Task<GetListingsResponse> Listings([FromQuery] ListingsSearchDto searchParams)
     {
-        var listings = await _context
-            .Listings.Include(listing => listing.Broker)
-            .Include(listing => listing.Area)
+        var query = _context.Listings.AsQueryable();
+        query = await ConstructFilter(
+            query,
+            searchParams.BedroomCount,
+            searchParams.BathroomCount,
+            searchParams.MinPrice,
+            searchParams.MaxPrice,
+            searchParams.MinArea,
+            searchParams.MaxArea,
+            searchParams.PropertyTypes,
+            searchParams.ListingTypes,
+            searchParams.AreaIds,
+            searchParams.RentalContractPeriods,
+            searchParams.Details
+        );
+
+        var listings = await query
             .OrderBy(b => b.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .Select(listing => new ListingDto
-            {
-                Id = listing.Id,
-                Name = listing.Name,
-                Description = listing.Description,
-                Broker = new BrokerDto
-                {
-                    Id = listing.Broker.Id,
-                    Email = listing.Broker.Email,
-                    Name = listing.Broker.Name,
-                },
-                Area = new LocalizedStringDto(listing.Area.Name),
-                Currency = listing.Currency,
-                PricePerContract = listing.PricePerContract,
-                BedroomCount = listing.BedroomCount,
-                BathroomCount = listing.BathroomCount,
-                AreaInMetersSq = listing.AreaInMetersSq,
-                ListingType = listing.ListingType,
-                PropertyType = listing.PropertyType,
-                RentalContractPeriod = listing.RentalContractPeriod,
-                Details = null,
-                PricePerYear = listing.PricePerYear,
-                CreatedAt = listing.CreatedAt,
-            })
+            .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
+            .Take(searchParams.PageSize)
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Definition)
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Option)
+            .Select(SelectToDto())
             .ToListAsync();
 
-        var count = await _context.Listings.CountAsync();
-        var totalPages = (int)Math.Ceiling(count / (double)pageSize);
+        var count = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(count / (double)searchParams.PageSize);
 
-        var response = new GetListingsResponse
+        return new GetListingsResponse
         {
-            RecentListingsCount = await _context
-                .Listings.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4))
-                .CountAsync(),
-            ListingsList = new PaginatedList<ListingDto>(listings, pageIndex, totalPages),
+            ListingsList = new PaginatedList<ListingDto>(
+                listings,
+                searchParams.PageNumber,
+                totalPages
+            ),
+        };
+    }
+
+    private static Expression<Func<Listing, ListingDto>> SelectToDto() =>
+        listing => new ListingDto
+        {
+            Id = listing.Id,
+            Name = listing.Name,
+            Description = listing.Description,
+            Broker = new BrokerDto
+            {
+                Id = listing.Broker.Id,
+                Email = listing.Broker.Email,
+                Name = listing.Broker.Name,
+            },
+            Area = new LocalizedStringDto(listing.Area.Name),
+            Currency = listing.Currency,
+            PricePerContract = listing.PricePerContract,
+            BedroomCount = listing.BedroomCount,
+            BathroomCount = listing.BathroomCount,
+            AreaInMetersSq = listing.AreaInMetersSq,
+            ListingType = listing.ListingType,
+            PropertyType = listing.PropertyType,
+            RentalContractPeriod = listing.RentalContractPeriod,
+            Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
+            PricePerYear = listing.PricePerYear,
+            CreatedAt = listing.CreatedAt,
         };
 
-        return response;
+    private async Task<IQueryable<Listing>> ConstructFilter(
+        IQueryable<Listing> query,
+        int? bedroomCount,
+        int? bathroomCount,
+        int? minPrice,
+        int? maxPrice,
+        int? minArea,
+        int? maxArea,
+        List<PropertyType>? propertyTypes,
+        List<ListingType>? listingTypes,
+        List<Guid>? areaIds,
+        List<RentalContractPeriod>? rentalContractPeriods,
+        List<DetailSearchDto>? details
+    )
+    {
+        query = await FilterDetails(query, details);
+        query = await FilterAreas(query, areaIds);
+        query = query.WhereIf(
+            bedroomCount != null,
+            listing => listing.BedroomCount == bedroomCount
+        );
+        query = query.WhereIf(
+            bathroomCount != null,
+            listing => listing.BathroomCount == bathroomCount
+        );
+        query = query.WhereIf(minPrice != null, listing => listing.PricePerContract >= minPrice);
+        query = query.WhereIf(maxPrice != null, listing => listing.PricePerContract <= maxPrice);
+        query = query.WhereIf(minArea != null, listing => listing.AreaInMetersSq >= minArea);
+        query = query.WhereIf(maxArea != null, listing => listing.AreaInMetersSq <= maxArea);
+        query = query.WhereIf(
+            !propertyTypes.IsNullOrEmpty(),
+            listing => propertyTypes!.Contains(listing.PropertyType)
+        );
+        query = query.WhereIf(
+            !listingTypes.IsNullOrEmpty(),
+            listing => listingTypes!.Contains(listing.ListingType)
+        );
+        query = query.WhereIf(
+            !rentalContractPeriods.IsNullOrEmpty(),
+            listing =>
+                listing.RentalContractPeriod != null
+                && rentalContractPeriods!.Contains(listing.RentalContractPeriod.Value)
+        );
+        return query;
     }
+
+    private async Task<IQueryable<Listing>> FilterAreas(
+        IQueryable<Listing> query,
+        List<Guid>? areaIds
+    )
+    {
+        if (areaIds.IsNullOrEmpty())
+            return query;
+        var leafAreas = await GetLeafAreas(areaIds!);
+        var leafAreaIds = leafAreas.Select(area => area.Id).ToList();
+        return query.Where(listing => leafAreaIds.Contains(listing.AreaId));
+    }
+
+    private async Task<List<Area>> GetLeafAreas(List<Guid> areaIds, int depth = 0)
+    {
+        const int maxDepth = 5; // Prevent infinite recursion
+        if (depth > maxDepth)
+            throw new Exception("Max depth reached while fetching leaf areas");
+        var areas = await _context
+            .Areas.Where(area => areaIds!.Contains(area.Id))
+            .Include(i => i.Children)
+            .ToListAsync();
+
+        var allAreas = areas.ToList(); //clone
+
+        var parentAreas = areas.Where(area => !area.Children.IsNullOrEmpty()).ToList();
+        if (!parentAreas.IsNullOrEmpty())
+        {
+            var leafAreasInChildren = await GetLeafAreas(
+                parentAreas.SelectMany(area => area.Children).Select(i => i.Id).ToList(),
+                depth + 1
+            );
+            allAreas.AddRange(areas.Where(leafAreasInChildren.Contains));
+        }
+        return allAreas.Where(i => i.Children.IsNullOrEmpty()).ToList();
+    }
+
+    private async Task<IQueryable<Listing>> FilterDetails(
+        IQueryable<Listing> query,
+        List<DetailSearchDto>? details
+    )
+    {
+        var definitions =
+            details != null
+                ? await _context
+                    .DetailsDefinitions.Where(detail =>
+                        details.Any(d => d.DetailDefinitionId == detail.Id)
+                    )
+                    .ToListAsync()
+                : [];
+
+        foreach (var definition in definitions)
+        {
+            var input = details!.Single(d => d.DetailDefinitionId == definition.Id);
+            if (definition.Type == DetailDefinitionType.MultiSelect)
+                query = ApplySelectQuery(query, definition, input);
+            else if (definition.Type == DetailDefinitionType.Boolean)
+                query = query.Where(listing =>
+                    listing.Details.Any(d =>
+                        d.DefinitionId == definition.Id
+                        && bool.Parse(d.Value!) == bool.Parse(input.Values![0])
+                    )
+                );
+            else if (definition.Type == DetailDefinitionType.Number)
+                query = query.Where(listing =>
+                    listing.Details.Any(d =>
+                        d.DefinitionId == definition.Id && input.Values!.Contains(d.Value!)
+                    )
+                );
+            else if (definition.Type == DetailDefinitionType.Text) { }
+            // not supported
+            else if (definition.Type == DetailDefinitionType.Year)
+                query = query.Where(listing =>
+                    listing.Details.Any(d =>
+                        d.DefinitionId == definition.Id && input.Values!.Contains(d.Value!)
+                    )
+                );
+        }
+
+        return query;
+    }
+
+    private static IQueryable<Listing> ApplySelectQuery(
+        IQueryable<Listing> query,
+        Entities.Details.DetailsDefinition definition,
+        DetailSearchDto input
+    )
+    {
+        if (definition.SearchBehavior == DetailDefinitionSearchBehavior.And)
+        {
+            foreach (var selectedInput in input.Options!)
+            {
+                query = query.Where(listing =>
+                    listing.Details.Any(d =>
+                        d.DefinitionId == definition.Id && d.OptionId == selectedInput
+                    )
+                );
+            }
+        }
+        if (definition.SearchBehavior == DetailDefinitionSearchBehavior.Or)
+        {
+            query = query.Where(listing =>
+                listing.Details.Any(d =>
+                    d.DefinitionId == definition.Id && input.Options!.Contains(d.OptionId!.Value)
+                )
+            );
+        }
+
+        return query;
+    }
+}
+
+public class ListingsSearchDto
+{
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int? BedroomCount { get; set; }
+    public int? BathroomCount { get; set; }
+    public int? MinPrice { get; set; }
+    public int? MaxPrice { get; set; }
+    public int? MinArea { get; set; }
+    public int? MaxArea { get; set; }
+    public List<PropertyType>? PropertyTypes { get; set; }
+    public List<ListingType>? ListingTypes { get; set; }
+    public List<Guid>? AreaIds { get; set; }
+    public List<RentalContractPeriod>? RentalContractPeriods { get; set; }
+    public List<DetailSearchDto>? Details { get; set; }
+}
+
+public class DetailSearchDto
+{
+    public Guid DetailDefinitionId { get; set; }
+    public List<string>? Values { get; set; } = [];
+    public List<Guid>? Options { get; set; } = [];
 }

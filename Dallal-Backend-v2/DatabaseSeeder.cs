@@ -34,6 +34,23 @@ public static class DatabaseSeeder
         "def00005-0005-0005-0005-000000000005"
     );
 
+    private static readonly Guid listing1Id = Guid.Parse("1111aaaa-1111-1111-1111-111111111111");
+    private static readonly Guid listing2Id = Guid.Parse("2222bbbb-2222-2222-2222-222222222222");
+    private static readonly Guid listing3Id = Guid.Parse("3333cccc-3333-3333-3333-333333333333");
+    private static readonly Guid listing4Id = Guid.Parse("4444dddd-4444-4444-4444-444444444444");
+    private static readonly Guid listing5Id = Guid.Parse("5555eeee-5555-5555-5555-555555555555");
+
+    // Option IDs for MultiSelect values
+    private static readonly Guid furnishedOptionId = Guid.Parse(
+        "0f700001-0001-0001-0001-000000000001"
+    );
+    private static readonly Guid semiFurnishedOptionId = Guid.Parse(
+        "0f700002-0002-0002-0002-000000000002"
+    );
+    private static readonly Guid unfurnishedOptionId = Guid.Parse(
+        "0f700003-0003-0003-0003-000000000003"
+    );
+
     public static Action<DbContext, bool> Seed()
     {
         return (context, _) =>
@@ -42,6 +59,7 @@ public static class DatabaseSeeder
             CreateBrokers(context);
             CreateDetailsDefinitions(context);
             CreateListings(context);
+            CreateListingDetails(context);
 
             context.SaveChanges();
         };
@@ -95,12 +113,6 @@ public static class DatabaseSeeder
 
     private static void CreateListings(DbContext context)
     {
-        var listing1Id = Guid.Parse("1111aaaa-1111-1111-1111-111111111111");
-        var listing2Id = Guid.Parse("2222bbbb-2222-2222-2222-222222222222");
-        var listing3Id = Guid.Parse("3333cccc-3333-3333-3333-333333333333");
-        var listing4Id = Guid.Parse("4444dddd-4444-4444-4444-444444444444");
-        var listing5Id = Guid.Parse("5555eeee-5555-5555-5555-555555555555");
-
         // Create listings
         CreateListing(
             listing1Id,
@@ -225,10 +237,86 @@ public static class DatabaseSeeder
                 BedroomCount = bedroomCount,
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
+                Status = ListingStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             };
             context.Set<Listing>().Add(listing);
+        }
+    }
+
+    private static void CreateListingDetails(DbContext context)
+    {
+        // Details for Listing 1 - Luxury Villa in Al Yasmeen
+        CreateListingDetail(listing1Id, FurnishingTypeId, furnishedOptionId, null, context);
+        CreateListingDetail(listing1Id, YearBuiltId, null, "2020", context);
+        CreateListingDetail(listing1Id, HasParkingId, null, "true", context);
+        CreateListingDetail(
+            listing1Id,
+            PropertySceneryId,
+            null,
+            "Garden and pool view with mountain backdrop",
+            context
+        );
+
+        // Details for Listing 2 - Modern Apartment for Sale
+        CreateListingDetail(listing2Id, FurnishingTypeId, semiFurnishedOptionId, null, context);
+        CreateListingDetail(listing2Id, YearBuiltId, null, "2019", context);
+        CreateListingDetail(listing2Id, FloorNumberId, null, "12", context);
+        CreateListingDetail(listing2Id, HasParkingId, null, "true", context);
+        CreateListingDetail(listing2Id, PropertySceneryId, null, "City skyline view", context);
+
+        // Details for Listing 3 - Spacious Family Home
+        CreateListingDetail(listing3Id, FurnishingTypeId, unfurnishedOptionId, null, context);
+        CreateListingDetail(listing3Id, YearBuiltId, null, "2018", context);
+        CreateListingDetail(listing3Id, HasParkingId, null, "true", context);
+        CreateListingDetail(listing3Id, PropertySceneryId, null, "Peaceful garden view", context);
+
+        // Details for Listing 4 - Commercial Office Space
+        CreateListingDetail(listing4Id, YearBuiltId, null, "2021", context);
+        CreateListingDetail(listing4Id, FloorNumberId, null, "3", context);
+        CreateListingDetail(listing4Id, HasParkingId, null, "true", context);
+        CreateListingDetail(listing4Id, PropertySceneryId, null, "Business district view", context);
+
+        // Details for Listing 5 - Investment Land Plot
+        CreateListingDetail(listing5Id, HasParkingId, null, "false", context);
+        CreateListingDetail(
+            listing5Id,
+            PropertySceneryId,
+            null,
+            "Open land with road access",
+            context
+        );
+    }
+
+    private static void CreateListingDetail(
+        Guid listingId,
+        Guid definitionId,
+        Guid? optionId,
+        string? value,
+        DbContext context
+    )
+    {
+        var detailId = Guid.NewGuid();
+        var existingDetail = context
+            .Set<ListingDetail>()
+            .Where(d => d.DefinitionId == definitionId)
+            .FirstOrDefault();
+
+        if (existingDetail == null)
+        {
+            var listingDetail = new ListingDetail
+            {
+                Id = detailId,
+                DefinitionId = definitionId,
+                OptionId = optionId,
+                Value = value,
+            };
+
+            context.Set<ListingDetail>().Add(listingDetail);
+
+            // Set the foreign key through the context after adding
+            context.Entry(listingDetail).Property("ListingId").CurrentValue = listingId;
         }
     }
 
@@ -268,7 +356,7 @@ public static class DatabaseSeeder
             "Furnishing Type",
             "نوع الفرش",
             DetailDefinitionType.MultiSelect,
-            DetailDefinitionSearchBehavior.or,
+            DetailDefinitionSearchBehavior.Or,
             new List<PropertyType>
             {
                 PropertyType.Apartment,
@@ -296,7 +384,7 @@ public static class DatabaseSeeder
             "Year Built",
             "سنة البناء",
             DetailDefinitionType.Year,
-            DetailDefinitionSearchBehavior.or,
+            DetailDefinitionSearchBehavior.Or,
             new List<PropertyType>
             {
                 PropertyType.Apartment,
@@ -315,7 +403,7 @@ public static class DatabaseSeeder
             "Floor Number",
             "رقم الطابق",
             DetailDefinitionType.Number,
-            DetailDefinitionSearchBehavior.or,
+            DetailDefinitionSearchBehavior.Or,
             new List<PropertyType>
             {
                 PropertyType.Apartment,
@@ -333,7 +421,7 @@ public static class DatabaseSeeder
             "Has Parking",
             "يوجد موقف سيارات",
             DetailDefinitionType.Boolean,
-            DetailDefinitionSearchBehavior.or,
+            DetailDefinitionSearchBehavior.Or,
             [],
             false,
             false,
@@ -346,7 +434,7 @@ public static class DatabaseSeeder
             "Property Scenery",
             "وصف المنظر",
             DetailDefinitionType.Text,
-            DetailDefinitionSearchBehavior.hidden,
+            DetailDefinitionSearchBehavior.Hidden,
             null,
             false,
             false,
