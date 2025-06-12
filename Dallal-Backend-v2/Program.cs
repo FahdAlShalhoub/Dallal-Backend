@@ -36,7 +36,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     var dataSource = dataSourceBuilder.Build();
 
     builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql(dataSource).UseSeeding(DatabaseContext.Seed())
+        opt.UseNpgsql(dataSource, optionsBuilder => optionsBuilder.UseNetTopologySuite())
+            .UseSeeding(DatabaseContext.Seed())
     );
 
     string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
@@ -47,10 +48,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(jwt);
     builder
         .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = jwt.GetTokenValidationParameters();
-        });
+        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
 
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");

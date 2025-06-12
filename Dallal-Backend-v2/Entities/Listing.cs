@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
+using Point = NetTopologySuite.Geometries.Point;
 
 namespace Dallal_Backend_v2.Entities;
 
@@ -23,6 +24,7 @@ public class Listing
     public List<ListingDetail> Details { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public Point Location { get; set; } = default!;
     public decimal PricePerYear
     {
         get
@@ -58,7 +60,8 @@ public class DetailsDefinition
     public Guid Id { get; set; }
     public LocalizedString Name { get; set; } = default!;
     public MultipleSearchBehavior Type { get; set; }
-    public List<DetailsDefinitionOption> Options { get; set; } = [];
+    public List<DetailsDefinitionOption>? Options { get; set; } = [];
+
 }
 
 public class DetailsDefinitionOption

@@ -3,7 +3,7 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2;
 
@@ -55,6 +55,10 @@ public class DatabaseContext : DbContext
         {
             listing.HasIndex(e => e.CreatedAt)
                 .IsDescending();
+
+            listing.Property(e => e.Location)
+                .HasColumnType("geometry (point)")
+                .IsRequired();
         });
 
     }
@@ -249,8 +253,9 @@ public class DatabaseContext : DbContext
                 BedroomCount = bedroomCount,
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
+                Location = new Point(new Coordinate(36.216547, 37.160154)),
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             context.Set<Listing>().Add(listing);
         }
