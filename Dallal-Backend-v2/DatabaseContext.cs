@@ -237,6 +237,7 @@ public class DatabaseContext : DbContext
         var existingListing = context.Find<Listing>(id);
         if (existingListing == null)
         {
+            var geometryFactory = new GeometryFactory(new PrecisionModel(), 4326); // SRID 4326 for WGS84
             var listing = new Listing
             {
                 Id = id,
@@ -253,7 +254,7 @@ public class DatabaseContext : DbContext
                 BedroomCount = bedroomCount,
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
-                Location = new Point(new Coordinate(36.216547, 37.160154)),
+                Location = geometryFactory.CreatePoint(new Coordinate(36.216547, 37.160154)),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
