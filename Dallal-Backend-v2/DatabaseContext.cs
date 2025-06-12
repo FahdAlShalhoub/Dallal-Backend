@@ -29,21 +29,22 @@ public class DatabaseContext : DbContext
 
     // Public constants for broker IDs to be referenced by other seed contributors
     private static readonly Guid BobBuilderId = Guid.Parse("b0b00000-0000-0000-0000-000000000001");
+
     private static readonly Guid DoraExplorerId = Guid.Parse(
         "d0d00000-0000-0000-0000-000000000002"
     );
+
     private static readonly Guid AbdoId = Guid.Parse("abcd0000-0000-0000-0000-000000000003");
 
     public DatabaseContext(DbContextOptions<DatabaseContext> options)
-        : base(options) { }
+        : base(options)
+    {
+    }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
-        configurationBuilder.Properties<LocalizedString>(p =>
-        {
-            p.HaveColumnType("jsonb");
-        });
+        configurationBuilder.Properties<LocalizedString>(p => { p.HaveColumnType("jsonb"); });
 
         configurationBuilder.Properties<Enum>().HaveConversion<string>();
     }
@@ -60,7 +61,6 @@ public class DatabaseContext : DbContext
                 .HasColumnType("geometry (point)")
                 .IsRequired();
         });
-
     }
 
     public static Action<DbContext, bool> Seed()
@@ -69,7 +69,7 @@ public class DatabaseContext : DbContext
         {
             CreateAreas(context);
             CreateBrokers(context);
-            // CreateListings(context);
+            CreateListings(context);
 
             context.SaveChanges();
         };
@@ -144,6 +144,8 @@ public class DatabaseContext : DbContext
             500.00m,
             "SAR",
             120000.00m,
+            24.634179,
+            46.680495,
             context
         );
 
@@ -161,6 +163,7 @@ public class DatabaseContext : DbContext
             180.50m,
             "SAR",
             450000.00m,
+            34.717689, 36.719778,
             context
         );
 
@@ -178,6 +181,8 @@ public class DatabaseContext : DbContext
             380.75m,
             "SAR",
             8500.00m,
+
+            36.214105, 37.144570,
             context
         );
 
@@ -195,6 +200,7 @@ public class DatabaseContext : DbContext
             150.00m,
             "SAR",
             45000.00m,
+            36.202538, 37.094129,
             context
         );
 
@@ -212,6 +218,7 @@ public class DatabaseContext : DbContext
             1200.00m,
             "SAR",
             800000.00m,
+            35.141404, 36.772441,
             context
         );
     }
@@ -230,6 +237,8 @@ public class DatabaseContext : DbContext
         decimal areaInMetersSq,
         string currency,
         decimal pricePerContract,
+        double longitude,
+        double latitude,
         DbContext context
     )
     {
@@ -237,7 +246,10 @@ public class DatabaseContext : DbContext
         var existingListing = context.Find<Listing>(id);
         if (existingListing == null)
         {
-            var geometryFactory = new GeometryFactory(new PrecisionModel(), 4326); // SRID 4326 for WGS84
+            var geometryFactory = new NetTopologySuite.Geometries.Point(longitude, latitude)
+            {
+                SRID = 4326 // Make sure the SRID matches your database configuration
+            };
             var listing = new Listing
             {
                 Id = id,
@@ -254,7 +266,7 @@ public class DatabaseContext : DbContext
                 BedroomCount = bedroomCount,
                 BathroomCount = bathroomCount,
                 AreaInMetersSq = areaInMetersSq,
-                Location = geometryFactory.CreatePoint(new Coordinate(36.216547, 37.160154)),
+                Location = geometryFactory,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
