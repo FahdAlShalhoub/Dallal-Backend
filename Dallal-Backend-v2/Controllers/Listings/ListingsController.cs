@@ -48,6 +48,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
                 Details = null,
                 PricePerYear = listing.PricePerYear,
                 CreatedAt = listing.CreatedAt,
+                Location = listing.Location.Coordinate
             })
             .ToListAsync();
 
