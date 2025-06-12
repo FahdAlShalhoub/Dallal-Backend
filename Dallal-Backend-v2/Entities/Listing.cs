@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
+using NetTopologySuite.Geometries;
 using Point = NetTopologySuite.Geometries.Point;
 
 namespace Dallal_Backend_v2.Entities;
@@ -27,7 +28,7 @@ public class Listing
     public DateTime UpdatedAt { get; set; }
 
     [Column(TypeName = "geometry (point)")]
-    public Point Location { get; set; } = default!;
+    public Geometry Location { get; set; } = default!;
     public decimal PricePerYear
     {
         get
