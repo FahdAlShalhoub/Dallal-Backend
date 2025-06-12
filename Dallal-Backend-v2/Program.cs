@@ -1,11 +1,9 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
-using Google.Apis.Requests;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -33,10 +31,12 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     );
     var dataSourceBuilder = new NpgsqlDataSourceBuilder(databaseConnectionString);
     dataSourceBuilder.EnableDynamicJson();
+    dataSourceBuilder.UseNetTopologySuite();
     var dataSource = dataSourceBuilder.Build();
 
     builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql(dataSource).UseSeeding(DatabaseContext.Seed())
+        opt.UseNpgsql(dataSource, optionsBuilder => optionsBuilder.UseNetTopologySuite())
+            .UseSeeding(DatabaseContext.Seed())
     );
 
     string? jwtSecret = builder.Configuration.GetRequiredSection("JWT")["SecretKey"];
@@ -47,10 +47,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(jwt);
     builder
         .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = jwt.GetTokenValidationParameters();
-        });
+        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
 
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
@@ -70,7 +67,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 }
 else
 {
-    builder.Services.AddDbContext<DatabaseContext>(opt => opt.UseNpgsql());
+    builder.Services.AddDbContext<DatabaseContext>(opt =>
+        opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite()));
 }
 
 builder.Services.Configure<RequestLocalizationOptions>(i =>

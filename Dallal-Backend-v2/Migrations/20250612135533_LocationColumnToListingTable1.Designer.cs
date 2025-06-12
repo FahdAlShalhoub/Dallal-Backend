@@ -6,6 +6,7 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -15,9 +16,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dallal_Backend_v2
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250612135533_LocationColumnToListingTable1")]
+    partial class LocationColumnToListingTable1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,31 +56,15 @@ namespace Dallal_Backend_v2
                     b.ToTable("Areas");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.Details.DetailsDefinition", b =>
+            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinition", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsHidden")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsHiddenInSearch")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean");
-
                     b.Property<LocalizedString>("Name")
                         .IsRequired()
                         .HasColumnType("jsonb");
-
-                    b.PrimitiveCollection<int[]>("PropertyTypes")
-                        .HasColumnType("integer[]");
-
-                    b.Property<string>("SearchBehavior")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -88,7 +75,7 @@ namespace Dallal_Backend_v2
                     b.ToTable("DetailsDefinitions");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.Details.DetailsDefinitionOption", b =>
+            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinitionOption", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -196,11 +183,8 @@ namespace Dallal_Backend_v2
                     b.Property<Guid?>("ListingId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("OptionId")
+                    b.Property<Guid>("OptionId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -358,9 +342,9 @@ namespace Dallal_Backend_v2
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.Details.DetailsDefinitionOption", b =>
+            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinitionOption", b =>
                 {
-                    b.HasOne("Dallal_Backend_v2.Entities.Details.DetailsDefinition", null)
+                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinition", null)
                         .WithMany("Options")
                         .HasForeignKey("DetailsDefinitionId");
                 });
@@ -386,7 +370,7 @@ namespace Dallal_Backend_v2
 
             modelBuilder.Entity("Dallal_Backend_v2.Entities.ListingDetail", b =>
                 {
-                    b.HasOne("Dallal_Backend_v2.Entities.Details.DetailsDefinition", "Definition")
+                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinition", "Definition")
                         .WithMany()
                         .HasForeignKey("DefinitionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -396,9 +380,11 @@ namespace Dallal_Backend_v2
                         .WithMany("Details")
                         .HasForeignKey("ListingId");
 
-                    b.HasOne("Dallal_Backend_v2.Entities.Details.DetailsDefinitionOption", "Option")
+                    b.HasOne("Dallal_Backend_v2.Entities.DetailsDefinitionOption", "Option")
                         .WithMany()
-                        .HasForeignKey("OptionId");
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Definition");
 
@@ -410,7 +396,7 @@ namespace Dallal_Backend_v2
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("Dallal_Backend_v2.Entities.Details.DetailsDefinition", b =>
+            modelBuilder.Entity("Dallal_Backend_v2.Entities.DetailsDefinition", b =>
                 {
                     b.Navigation("Options");
                 });

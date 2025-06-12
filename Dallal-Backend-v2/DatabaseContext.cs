@@ -4,7 +4,7 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2;
 
@@ -41,6 +41,8 @@ public class DatabaseContext : DbContext
         modelBuilder.Entity<Listing>(listing =>
         {
             listing.HasIndex(e => e.CreatedAt).IsDescending();
+
+            listing.Property(e => e.Location).HasColumnType("geometry (point)").IsRequired();
         });
     }
 

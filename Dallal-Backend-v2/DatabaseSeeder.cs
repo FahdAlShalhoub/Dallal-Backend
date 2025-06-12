@@ -4,6 +4,7 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2;
 
@@ -128,6 +129,8 @@ public static class DatabaseSeeder
             500.00m,
             "SAR",
             120000.00m,
+            24.7136 + 0.01, // Slightly north of Riyadh center
+            46.6753 + 0.01, // Slightly east of Riyadh center
             context
         );
 
@@ -145,6 +148,8 @@ public static class DatabaseSeeder
             180.50m,
             "SAR",
             450000.00m,
+            24.7136 - 0.02, // Slightly south of Riyadh center
+            46.6753 + 0.02, // Further east of Riyadh center
             context
         );
 
@@ -162,6 +167,8 @@ public static class DatabaseSeeder
             380.75m,
             "SAR",
             8500.00m,
+            24.7136 + 0.02, // Further north of Riyadh center
+            46.6753 - 0.01, // Slightly west of Riyadh center
             context
         );
 
@@ -179,6 +186,8 @@ public static class DatabaseSeeder
             150.00m,
             "SAR",
             45000.00m,
+            24.7136 + 0.015, // North of Riyadh center
+            46.6753 + 0.015, // East of Riyadh center
             context
         );
 
@@ -196,6 +205,8 @@ public static class DatabaseSeeder
             1200.00m,
             "SAR",
             800000.00m,
+            24.7136 - 0.015, // South of Riyadh center
+            46.6753 + 0.015, // East of Riyadh center
             context
         );
     }
@@ -214,6 +225,8 @@ public static class DatabaseSeeder
         decimal areaInMetersSq,
         string currency,
         decimal pricePerContract,
+        double locationX,
+        double locationY,
         DbContext context
     )
     {
@@ -240,6 +253,7 @@ public static class DatabaseSeeder
                 Status = ListingStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
+                Location = new Point(locationX, locationY),
             };
             context.Set<Listing>().Add(listing);
         }

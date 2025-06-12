@@ -1,4 +1,5 @@
 using Dallal_Backend_v2.Entities.Enums;
+using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
@@ -31,6 +32,7 @@ public class ListingDto
     public List<ListingDetailDto> Details { get; set; } = default!;
     public decimal PricePerYear { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
+    public Coordinate Location { get; set; }
 }
 
 public record BrokerDto
