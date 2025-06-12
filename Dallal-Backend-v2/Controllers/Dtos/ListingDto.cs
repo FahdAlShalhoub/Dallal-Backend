@@ -1,4 +1,3 @@
-using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
@@ -24,7 +23,7 @@ public class ListingDto
     public ListingType ListingType { get; set; }
     public PropertyType PropertyType { get; set; }
     public RentalContractPeriod? RentalContractPeriod { get; set; }
-    public List<ListingDetail> Details { get; set; } = default!;
+    public List<ListingDetailDto> Details { get; set; } = default!;
     public decimal PricePerYear { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
 }

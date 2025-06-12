@@ -9,6 +9,14 @@ public class LocalizedStringDto
 
     public LocalizedStringDto() { }
 
+    public LocalizedStringDto(string value)
+    {
+        Values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "fallback", value },
+        };
+    }
+
     public LocalizedStringDto(LocalizedString localizedString)
     {
         Values = localizedString.Values.ToDictionary();

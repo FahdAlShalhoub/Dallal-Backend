@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Details;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -134,7 +135,7 @@ public class AdminDetailsController : DallalController
         UpdateDetailsDefinitionOptionDto incomingOption
     )
     {
-        var existingOption = detailsDefinition.Options.FirstOrDefault(option =>
+        var existingOption = detailsDefinition.Options?.FirstOrDefault(option =>
             option.Id == incomingOption.Id!.Value
         );
 
@@ -154,7 +155,7 @@ public class AdminDetailsController : DallalController
             Id = Guid.NewGuid(),
             Name = new LocalizedString { Values = incomingOption.Name.Values },
         };
-
+        detailsDefinition.Options ??= [];
         detailsDefinition.Options.Add(newOption);
     }
 
@@ -165,8 +166,12 @@ public class AdminDetailsController : DallalController
             Id = detailsDefinition.Id,
             Name = new LocalizedStringDto(detailsDefinition.Name),
             Type = detailsDefinition.Type,
+            IsHidden = detailsDefinition.IsHidden,
+            IsHiddenInSearch = detailsDefinition.IsHiddenInSearch,
+            PropertyTypes = detailsDefinition.PropertyTypes,
+            SearchBehavior = detailsDefinition.SearchBehavior,
             Options = detailsDefinition
-                .Options.Select(option => new DetailsDefinitionOptionDto
+                .Options?.Select(option => new DetailsDefinitionOptionDto
                 {
                     Id = option.Id,
                     Name = new LocalizedStringDto(option.Name),

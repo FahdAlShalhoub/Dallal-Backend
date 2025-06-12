@@ -6,8 +6,12 @@ public class DetailsDefinitionDto
 {
     public Guid Id { get; set; }
     public LocalizedStringDto Name { get; set; } = new();
-    public MultipleSearchBehavior Type { get; set; }
-    public List<DetailsDefinitionOptionDto> Options { get; set; } = new();
+    public DetailDefinitionType Type { get; set; }
+    public DetailDefinitionSearchBehavior SearchBehavior { get; set; }
+    public List<PropertyType>? PropertyTypes { get; set; } = new();
+    public bool IsHidden { get; set; }
+    public bool IsHiddenInSearch { get; set; }
+    public List<DetailsDefinitionOptionDto>? Options { get; set; } = new();
 }
 
 public class DetailsDefinitionOptionDto
@@ -20,7 +24,10 @@ public class DetailsDefinitionOptionDto
 public class CreateDetailsDefinitionDto
 {
     public LocalizedStringDto Name { get; set; } = new();
-    public MultipleSearchBehavior Type { get; set; }
+    public DetailDefinitionType Type { get; set; }
+    public DetailDefinitionSearchBehavior SearchBehavior { get; set; }
+    public List<PropertyType> PropertyTypes { get; set; } = new();
+    public bool IsHidden { get; set; }
     public List<CreateDetailsDefinitionOptionDto> Options { get; set; } = new();
 }
 
@@ -32,7 +39,10 @@ public class CreateDetailsDefinitionOptionDto
 public class UpdateDetailsDefinitionDto
 {
     public LocalizedStringDto Name { get; set; } = new();
-    public MultipleSearchBehavior Type { get; set; }
+    public DetailDefinitionType Type { get; set; }
+    public DetailDefinitionSearchBehavior SearchBehavior { get; set; }
+    public List<PropertyType> PropertyTypes { get; set; } = new();
+    public bool IsHidden { get; set; }
     public List<UpdateDetailsDefinitionOptionDto> Options { get; set; } = new();
 }
 

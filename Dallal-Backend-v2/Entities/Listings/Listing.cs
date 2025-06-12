@@ -43,26 +43,3 @@ public class Listing
 
     public ListingStatus Status { get; set; }
 }
-
-public class ListingDetail
-{
-    public Guid Id { get; set; }
-    public DetailsDefinition Definition { get; set; } = default!;
-    public Guid DefinitionId { get; set; }
-    public DetailsDefinitionOption Option { get; set; } = default!;
-    public Guid OptionId { get; set; }
-}
-
-public class DetailsDefinition
-{
-    public Guid Id { get; set; }
-    public LocalizedString Name { get; set; } = default!;
-    public MultipleSearchBehavior Type { get; set; }
-    public List<DetailsDefinitionOption> Options { get; set; } = [];
-}
-
-public class DetailsDefinitionOption
-{
-    public Guid Id { get; set; }
-    public LocalizedString Name { get; set; } = default!;
-}
