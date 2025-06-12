@@ -31,6 +31,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     );
     var dataSourceBuilder = new NpgsqlDataSourceBuilder(databaseConnectionString);
     dataSourceBuilder.EnableDynamicJson();
+    dataSourceBuilder.UseNetTopologySuite();
     var dataSource = dataSourceBuilder.Build();
 
     builder.Services.AddDbContext<DatabaseContext>(opt =>
