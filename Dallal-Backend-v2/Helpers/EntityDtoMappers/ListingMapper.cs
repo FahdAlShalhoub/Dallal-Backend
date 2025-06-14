@@ -28,5 +28,10 @@ public static class ListingMapper
             Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
             PricePerYear = listing.PricePerYear,
             CreatedAt = listing.CreatedAt,
+            Location = new CoordinateDto
+            {
+                Longitude = listing.Location.Coordinate.X,
+                Latitude = listing.Location.Coordinate.Y
+            }
         };
 }
