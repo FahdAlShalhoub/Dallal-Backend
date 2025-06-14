@@ -42,6 +42,10 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
 
         var favoriteListings = await _context
             .Listings.Where(l => newFavorites.Contains(l.Id))
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Definition)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Option)
             .ToListAsync();
 
         foreach (var listing in favoriteListings)

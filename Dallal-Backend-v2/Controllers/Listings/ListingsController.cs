@@ -19,6 +19,10 @@ public class ListingsController(DatabaseContext _context) : DallalController
         query = query.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4));
         var count = await query.CountAsync();
         var listings = await query
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Definition)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Option)
             .Select(ListingMapper.SelectToDto())
             .OrderByDescending(b => b.CreatedAt)
             .Take(5)
@@ -51,6 +55,10 @@ public class ListingsController(DatabaseContext _context) : DallalController
         );
 
         var listings = await query
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Definition)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Option)
             .OrderBy(b => b.Id)
             .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
