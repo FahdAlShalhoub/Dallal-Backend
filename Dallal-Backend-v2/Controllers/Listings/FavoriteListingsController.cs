@@ -21,6 +21,10 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
         var query = _context.Listings.Where(i => i.Favorites.Any(f => f.Id == UserId));
 
         var listings = await query
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Definition)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Option)
             .Take(pageSize)
             .Skip((pageNumber - 1) * pageSize)
             .OrderByDescending(i => i.CreatedAt)
