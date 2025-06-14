@@ -32,7 +32,7 @@ public class ListingDto
     public List<ListingDetailDto> Details { get; set; } = default!;
     public decimal PricePerYear { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
-    public Coordinate Location { get; set; }
+    public CoordinateDto Location { get; set; }
 }
 
 public record BrokerDto
@@ -40,4 +40,10 @@ public record BrokerDto
     public Guid Id { get; set; }
     public string Email { get; set; }
     public string Name { get; set; }
+}
+
+public record CoordinateDto()
+{
+   public double Longitude { get; set; }
+   public double Latitude { get; set; }
 }

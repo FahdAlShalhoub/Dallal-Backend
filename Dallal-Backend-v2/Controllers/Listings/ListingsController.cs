@@ -99,6 +99,11 @@ public class ListingsController(DatabaseContext _context) : DallalController
             Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
             PricePerYear = listing.PricePerYear,
             CreatedAt = listing.CreatedAt,
+            Location = new CoordinateDto
+            {
+                Longitude = listing.Location.Coordinate.X,
+                Latitude = listing.Location.Coordinate.Y
+            }
         };
 
     private async Task<IQueryable<Listing>> ConstructFilter(
