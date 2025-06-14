@@ -19,12 +19,11 @@ public class ListingsController(DatabaseContext _context) : DallalController
         query = query.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4));
         var count = await query.CountAsync();
         var listings = await query
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Definition)
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Option)
-            .Select(SelectToDto())
+            .Select(ListingMapper.SelectToDto())
+            .OrderByDescending(b => b.CreatedAt)
+            .Take(5)
             .ToListAsync();
+
         return new GetRecentListingsResponse
         {
             RecentListingsCount = count,
@@ -55,22 +54,18 @@ public class ListingsController(DatabaseContext _context) : DallalController
             .OrderBy(b => b.Id)
             .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Definition)
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Option)
-            .Select(SelectToDto())
+            .Select(ListingMapper.SelectToDto())
             .ToListAsync();
 
         var count = await query.CountAsync();
-        var totalPages = (int)Math.Ceiling(count / (double)searchParams.PageSize);
 
         return new GetListingsResponse
         {
             ListingsList = new PaginatedList<ListingDto>(
                 listings,
                 searchParams.PageNumber,
-                totalPages
+                count,
+                searchParams.PageSize
             ),
         };
     }
