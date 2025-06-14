@@ -1,10 +1,8 @@
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Details;
-using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2;
 
@@ -41,13 +39,17 @@ public class DatabaseContext : DbContext
         modelBuilder.Entity<Listing>(listing =>
         {
             listing.HasIndex(e => e.CreatedAt).IsDescending();
-
             listing.Property(e => e.Location).HasColumnType("geometry (point)").IsRequired();
+        });
+
+        modelBuilder.Entity<Buyer>(buyer =>
+        {
+            buyer
+                .HasMany(b => b.FavoriteListings)
+                .WithMany(b => b.Favorites)
+                .UsingEntity(i => i.ToTable("BuyerFavoriteListings"));
         });
     }
 
-    public static Action<DbContext, bool> Seed()
-    {
-        return DatabaseSeeder.Seed();
-    }
+    public static Action<DbContext, bool> Seed() => DatabaseSeeder.Seed();
 }

@@ -1,0 +1,32 @@
+using System.Linq.Expressions;
+using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Entities;
+
+public static class ListingMapper
+{
+    public static Expression<Func<Listing, ListingDto>> SelectToDto() =>
+        listing => new ListingDto
+        {
+            Id = listing.Id,
+            Name = listing.Name,
+            Description = listing.Description,
+            Broker = new BrokerDto
+            {
+                Id = listing.Broker.Id,
+                Email = listing.Broker.Email,
+                Name = listing.Broker.Name,
+            },
+            Area = new LocalizedStringDto(listing.Area.Name),
+            Currency = listing.Currency,
+            PricePerContract = listing.PricePerContract,
+            BedroomCount = listing.BedroomCount,
+            BathroomCount = listing.BathroomCount,
+            AreaInMetersSq = listing.AreaInMetersSq,
+            ListingType = listing.ListingType,
+            PropertyType = listing.PropertyType,
+            RentalContractPeriod = listing.RentalContractPeriod,
+            Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
+            PricePerYear = listing.PricePerYear,
+            CreatedAt = listing.CreatedAt,
+        };
+}

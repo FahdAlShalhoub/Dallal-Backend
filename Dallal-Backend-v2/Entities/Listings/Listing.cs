@@ -48,4 +48,5 @@ public class Listing
     }
 
     public ListingStatus Status { get; set; }
+    public List<Buyer> Favorites { get; set; } = [];
 }
