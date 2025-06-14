@@ -30,8 +30,8 @@ public static class ListingMapper
             CreatedAt = listing.CreatedAt,
             Location = new CoordinateDto
             {
-                Longitude = listing.Location.Coordinate.X,
-                Latitude = listing.Location.Coordinate.Y
+                Longitude = listing.Location.Coordinate.Y,
+                Latitude = listing.Location.Coordinate.X
             }
         };
 }
