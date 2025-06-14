@@ -14,6 +14,8 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
+using Serilog.Sinks.Loki;
+using Serilog.Sinks.Loki.Labels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,7 @@ builder
         // Configure JSON serialization to convert enums to strings
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
 
 builder.Services.AddOpenApi();
 
@@ -69,6 +72,30 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(new S3(containerName, region, secretAccessKey, accessKeyId));
 
     builder.Services.AddScoped<SubmissionService>();
+
+
+
+    string? lokiUrl = builder.Configuration.GetRequiredSection("Loki")["Uri"];
+    Trace.Assert(!string.IsNullOrEmpty(lokiUrl), "Loki url not found");
+    string? lokiUsername = builder.Configuration.GetRequiredSection("S3")["Username"];
+    Trace.Assert(!string.IsNullOrEmpty(lokiUsername), "Loki username not found");
+    string? lokiPassword = builder.Configuration.GetRequiredSection("S3")["Password"];
+    Trace.Assert(!string.IsNullOrEmpty(lokiPassword), "Loki Password not found");
+
+    Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .Enrich.FromLogContext()
+        .Enrich.WithEnvironmentName()
+        .Enrich.WithMachineName()
+        .Enrich.WithProcessId()
+        .Enrich.WithThreadId()
+        .Enrich.WithProperty("Service_Name", "Dallal_Backend")
+        .WriteTo.Console()
+        .WriteTo.LokiHttp(
+            new BasicAuthCredentials(lokiUrl, lokiUsername, lokiPassword))
+        .CreateLogger();
+
+    builder.Host.UseSerilog();
 }
 else
 {
