@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
-using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
@@ -15,7 +14,6 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Sinks.Loki;
-using Serilog.Sinks.Loki.Labels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,12 +72,11 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddScoped<SubmissionService>();
 
 
-
     string? lokiUrl = builder.Configuration.GetRequiredSection("Loki")["Uri"];
     Trace.Assert(!string.IsNullOrEmpty(lokiUrl), "Loki url not found");
-    string? lokiUsername = builder.Configuration.GetRequiredSection("S3")["Username"];
+    string? lokiUsername = builder.Configuration.GetRequiredSection("Loki")["Username"];
     Trace.Assert(!string.IsNullOrEmpty(lokiUsername), "Loki username not found");
-    string? lokiPassword = builder.Configuration.GetRequiredSection("S3")["Password"];
+    string? lokiPassword = builder.Configuration.GetRequiredSection("Loki")["Password"];
     Trace.Assert(!string.IsNullOrEmpty(lokiPassword), "Loki Password not found");
 
     Log.Logger = new LoggerConfiguration()
@@ -96,6 +93,89 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
         .CreateLogger();
 
     builder.Host.UseSerilog();
+
+
+    string? tempoUrl = builder.Configuration.GetRequiredSection("Tempo")["Uri"];
+    Trace.Assert(!string.IsNullOrEmpty(tempoUrl), "Tempo url not found");
+    string? tempoUsername = builder.Configuration.GetRequiredSection("Tempo")["Username"];
+    Trace.Assert(!string.IsNullOrEmpty(tempoUsername), "Tempo username not found");
+    string? tempoPassword = builder.Configuration.GetRequiredSection("Tempo")["Password"];
+    Trace.Assert(!string.IsNullOrEmpty(tempoPassword), "Tempo Password not found");
+
+    builder.Services.AddOpenTelemetry()
+        .WithTracing(tracerProviderBuilder =>
+        {
+            tracerProviderBuilder
+                .AddSource("Dallal.Backend")
+                .AddAspNetCoreInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                    options.EnrichWithHttpRequest = (activity, httpRequest) =>
+                    {
+                        activity.SetTag("http.request.body.size", httpRequest.ContentLength);
+                        activity.SetTag("http.request.header.user-agent", httpRequest.Headers.UserAgent.ToString());
+                    };
+                    options.EnrichWithHttpResponse = (activity, httpResponse) =>
+                    {
+                        activity.SetTag("http.response.body.size", httpResponse.ContentLength);
+                    };
+                    options.Filter = httpContext =>
+                    {
+                        // Filter out health check and static file requests
+                        var path = httpContext.Request.Path.Value;
+                        return !path?.Contains("health") == true &&
+                               !path?.Contains("swagger") == true &&
+                               !path?.Contains("scalar") == true;
+                    };
+                })
+                // Add HTTP client instrumentation
+                .AddHttpClientInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                    options.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
+                    {
+                        activity.SetTag("http.request.method", httpRequestMessage.Method.Method);
+                        activity.SetTag("http.request.uri", httpRequestMessage.RequestUri?.ToString());
+                    };
+                    options.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
+                    {
+                        activity.SetTag("http.response.status_code", (int) httpResponseMessage.StatusCode);
+                    };
+                })
+                .AddEntityFrameworkCoreInstrumentation(options =>
+                {
+                    options.SetDbStatementForText = true;
+                    options.SetDbStatementForStoredProcedure = true;
+                    options.EnrichWithIDbCommand = (activity, command) =>
+                    {
+                        activity.SetTag("db.statement_type", command.CommandType.ToString());
+                    };
+                })
+                .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                    .AddService(
+                        serviceName: "dallal-backend",
+                        serviceVersion: "1.0.0",
+                        serviceInstanceId: Environment.MachineName)
+                    .AddAttributes(new Dictionary<string, object>
+                    {
+                        ["deployment.environment"] = builder.Environment.EnvironmentName,
+                        ["service.namespace"] = "dallal",
+                        ["host.name"] = Environment.MachineName,
+                        ["os.type"] = Environment.OSVersion.Platform.ToString(),
+                        ["runtime.name"] = ".NET",
+                        ["runtime.version"] = Environment.Version.ToString()
+                    }))
+                .SetSampler(new TraceIdRatioBasedSampler(1.0)) // Sample 100% in development, adjust for production
+                .AddConsoleExporter()
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri(tempoUrl);
+                    var credentials = Convert.ToBase64String(
+                        Encoding.UTF8.GetBytes($"{tempoUsername}:{tempoPassword}"));
+                    options.Headers = $"Authorization=Basic {credentials}";
+                    options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                });
+        });
 }
 else
 {
