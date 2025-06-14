@@ -142,8 +142,6 @@ public class AuthController(
 
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthenticatedUser), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
     {
         BaseUser? user = request.UserType switch

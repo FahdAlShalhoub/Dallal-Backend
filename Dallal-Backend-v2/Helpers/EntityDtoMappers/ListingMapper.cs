@@ -4,7 +4,7 @@ using Dallal_Backend_v2.Entities;
 
 public static class ListingMapper
 {
-    public static Expression<Func<Listing, ListingDto>> SelectToDto() =>
+    public static Expression<Func<Listing, ListingDto>> SelectToDto(Guid? userIdOrNull) =>
         listing => new ListingDto
         {
             Id = listing.Id,
@@ -30,8 +30,11 @@ public static class ListingMapper
             CreatedAt = listing.CreatedAt,
             Location = new CoordinateDto
             {
-                Longitude = listing.Location.Coordinate.X,
-                Latitude = listing.Location.Coordinate.Y
-            }
+                Longitude = listing.Location.Coordinate.Y,
+                Latitude = listing.Location.Coordinate.X,
+            },
+            IsFavorite = userIdOrNull.HasValue
+                ? listing.Favorites.Any(f => f.Id == userIdOrNull.Value)
+                : false,
         };
 }

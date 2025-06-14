@@ -24,7 +24,7 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
             .Take(pageSize)
             .Skip((pageNumber - 1) * pageSize)
             .OrderByDescending(i => i.CreatedAt)
-            .Select(ListingMapper.SelectToDto())
+            .Select(ListingMapper.SelectToDto(UserIdOrNull))
             .ToListAsync();
         var count = await query.CountAsync();
 
@@ -52,6 +52,28 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
         {
             if (!buyer.FavoriteListings.Contains(listing))
                 buyer.FavoriteListings.Add(listing);
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    [HttpDelete]
+    public async Task RemoveFavoriteListing([FromBody] List<Guid> favoritesToRemove)
+    {
+        var buyer =
+            await _context
+                .Buyers.Include(b => b.FavoriteListings)
+                .FirstOrDefaultAsync(b => b.Id == UserId)
+            ?? throw new EntityNotFoundException(typeof(Buyer), UserId);
+
+        var favoriteListings = await _context
+            .Listings.Where(l => favoritesToRemove.Contains(l.Id))
+            .ToListAsync();
+
+        foreach (var listing in favoriteListings)
+        {
+            if (buyer.FavoriteListings.Contains(listing))
+                buyer.FavoriteListings.Remove(listing);
         }
 
         await _context.SaveChangesAsync();

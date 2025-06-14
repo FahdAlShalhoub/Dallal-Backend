@@ -23,7 +23,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
-            .Select(ListingMapper.SelectToDto())
+            .Select(ListingMapper.SelectToDto(UserIdOrNull))
             .OrderByDescending(b => b.CreatedAt)
             .Take(5)
             .ToListAsync();
@@ -62,7 +62,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
             .OrderBy(b => b.Id)
             .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
-            .Select(ListingMapper.SelectToDto())
+            .Select(ListingMapper.SelectToDto(UserIdOrNull))
             .ToListAsync();
 
         var count = await query.CountAsync();

@@ -33,6 +33,7 @@ public class ListingDto
     public decimal PricePerYear { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
     public CoordinateDto Location { get; set; }
+    public bool IsFavorite { get; set; }
 }
 
 public record BrokerDto
@@ -44,6 +45,6 @@ public record BrokerDto
 
 public record CoordinateDto()
 {
-   public double Longitude { get; set; }
-   public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public double Latitude { get; set; }
 }
