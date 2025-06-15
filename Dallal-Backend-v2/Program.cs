@@ -25,7 +25,6 @@ builder
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-
 builder.Services.AddOpenApi();
 
 if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
@@ -53,7 +52,10 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(jwt);
     builder
         .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = jwt.GetTokenValidationParameters();
+        });
 
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
@@ -71,7 +73,6 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 
     builder.Services.AddScoped<SubmissionService>();
 
-
     string? lokiUrl = builder.Configuration.GetRequiredSection("Loki")["Uri"];
     Trace.Assert(!string.IsNullOrEmpty(lokiUrl), "Loki url not found");
     string? lokiUsername = builder.Configuration.GetRequiredSection("Loki")["Username"];
@@ -88,12 +89,10 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
         .Enrich.WithThreadId()
         .Enrich.WithProperty("Service_Name", "Dallal_Backend")
         .WriteTo.Console()
-        .WriteTo.LokiHttp(
-            new BasicAuthCredentials(lokiUrl, lokiUsername, lokiPassword))
+        .WriteTo.LokiHttp(new BasicAuthCredentials(lokiUrl, lokiUsername, lokiPassword))
         .CreateLogger();
 
     builder.Host.UseSerilog();
-
 
     string? tempoUrl = builder.Configuration.GetRequiredSection("Tempo")["Uri"];
     Trace.Assert(!string.IsNullOrEmpty(tempoUrl), "Tempo url not found");
@@ -102,7 +101,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     string? tempoPassword = builder.Configuration.GetRequiredSection("Tempo")["Password"];
     Trace.Assert(!string.IsNullOrEmpty(tempoPassword), "Tempo Password not found");
 
-    builder.Services.AddOpenTelemetry()
+    builder
+        .Services.AddOpenTelemetry()
         .WithTracing(tracerProviderBuilder =>
         {
             tracerProviderBuilder
@@ -113,7 +113,10 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                     options.EnrichWithHttpRequest = (activity, httpRequest) =>
                     {
                         activity.SetTag("http.request.body.size", httpRequest.ContentLength);
-                        activity.SetTag("http.request.header.user-agent", httpRequest.Headers.UserAgent.ToString());
+                        activity.SetTag(
+                            "http.request.header.user-agent",
+                            httpRequest.Headers.UserAgent.ToString()
+                        );
                     };
                     options.EnrichWithHttpResponse = (activity, httpResponse) =>
                     {
@@ -123,9 +126,9 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                     {
                         // Filter out health check and static file requests
                         var path = httpContext.Request.Path.Value;
-                        return !path?.Contains("health") == true &&
-                               !path?.Contains("swagger") == true &&
-                               !path?.Contains("scalar") == true;
+                        return !path?.Contains("health") == true
+                            && !path?.Contains("swagger") == true
+                            && !path?.Contains("scalar") == true;
                     };
                 })
                 // Add HTTP client instrumentation
@@ -135,11 +138,17 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                     options.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
                     {
                         activity.SetTag("http.request.method", httpRequestMessage.Method.Method);
-                        activity.SetTag("http.request.uri", httpRequestMessage.RequestUri?.ToString());
+                        activity.SetTag(
+                            "http.request.uri",
+                            httpRequestMessage.RequestUri?.ToString()
+                        );
                     };
                     options.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
                     {
-                        activity.SetTag("http.response.status_code", (int) httpResponseMessage.StatusCode);
+                        activity.SetTag(
+                            "http.response.status_code",
+                            (int)httpResponseMessage.StatusCode
+                        );
                     };
                 })
                 .AddEntityFrameworkCoreInstrumentation(options =>
@@ -151,27 +160,34 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                         activity.SetTag("db.statement_type", command.CommandType.ToString());
                     };
                 })
-                .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                    .AddService(
-                        serviceName: "dallal-backend",
-                        serviceVersion: "1.0.0",
-                        serviceInstanceId: Environment.MachineName)
-                    .AddAttributes(new Dictionary<string, object>
-                    {
-                        ["deployment.environment"] = builder.Environment.EnvironmentName,
-                        ["service.namespace"] = "dallal",
-                        ["host.name"] = Environment.MachineName,
-                        ["os.type"] = Environment.OSVersion.Platform.ToString(),
-                        ["runtime.name"] = ".NET",
-                        ["runtime.version"] = Environment.Version.ToString()
-                    }))
+                .SetResourceBuilder(
+                    ResourceBuilder
+                        .CreateDefault()
+                        .AddService(
+                            serviceName: "dallal-backend",
+                            serviceVersion: "1.0.0",
+                            serviceInstanceId: Environment.MachineName
+                        )
+                        .AddAttributes(
+                            new Dictionary<string, object>
+                            {
+                                ["deployment.environment"] = builder.Environment.EnvironmentName,
+                                ["service.namespace"] = "dallal",
+                                ["host.name"] = Environment.MachineName,
+                                ["os.type"] = Environment.OSVersion.Platform.ToString(),
+                                ["runtime.name"] = ".NET",
+                                ["runtime.version"] = Environment.Version.ToString(),
+                            }
+                        )
+                )
                 .SetSampler(new TraceIdRatioBasedSampler(1.0)) // Sample 100% in development, adjust for production
-                .AddConsoleExporter()
+                // .AddConsoleExporter()
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = new Uri(tempoUrl);
                     var credentials = Convert.ToBase64String(
-                        Encoding.UTF8.GetBytes($"{tempoUsername}:{tempoPassword}"));
+                        Encoding.UTF8.GetBytes($"{tempoUsername}:{tempoPassword}")
+                    );
                     options.Headers = $"Authorization=Basic {credentials}";
                     options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                 });
@@ -180,7 +196,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 else
 {
     builder.Services.AddDbContext<DatabaseContext>(opt =>
-        opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite()));
+        opt.UseNpgsql(optionsBuilder => optionsBuilder.UseNetTopologySuite())
+    );
 }
 
 builder.Services.Configure<RequestLocalizationOptions>(i =>
