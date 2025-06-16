@@ -14,7 +14,7 @@ public class JwtService(string jwtSecretKey, string issuer)
         return new JwtSecurityTokenHandler().WriteToken(
             new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
+                expires: DateTime.Now.AddDays(7),
                 signingCredentials: new SigningCredentials(
                     _jwtSecretKey,
                     SecurityAlgorithms.HmacSha256
