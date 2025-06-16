@@ -1,3 +1,4 @@
+using System.Security;
 using Twilio;
 using Twilio.Http;
 using Twilio.Rest.Api.V2010.Account;
@@ -28,7 +29,7 @@ public class OtpService(IConfiguration configuration, IWebHostEnvironment _env)
         if (_env.IsDevelopment())
         {
             if (otp != "111111")
-                throw new UnauthorizedAccessException("failed");
+                throw new VerificationException("failed");
             return;
         }
         var result = await VerificationCheckResource.CreateAsync(
@@ -43,6 +44,6 @@ public class OtpService(IConfiguration configuration, IWebHostEnvironment _env)
         // `pending`, `approved`, `canceled`, `max_attempts_reached`, `deleted`, `failed` or `expired`.
         var isApproved = result.Status == "approved";
         if (!isApproved)
-            throw new UnauthorizedAccessException(result.Status);
+            throw new VerificationException(result.Status);
     }
 }

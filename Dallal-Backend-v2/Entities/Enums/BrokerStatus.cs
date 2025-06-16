@@ -5,6 +5,5 @@ public enum BrokerStatus
     MissingData,
     Pending,
     Approved,
-    Rejected,
     Suspended,
 }

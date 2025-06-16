@@ -47,7 +47,7 @@ public class BrokerListingsController(
         };
 
         _context.Listings.Add(listing);
-        await _submissionService.CreateSubmission(
+        await _submissionService.UpsertSubmission(
             SubmissionType.Listing,
             listing.Id,
             null,

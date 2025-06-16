@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Security;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -127,7 +128,7 @@ public class ProblemDetailsExceptionMiddleware
                 "https://tools.ietf.org/html/rfc7235#section-3.1"
             ),
 
-            ArgumentNullException or ArgumentException => (
+            ArgumentNullException or ArgumentException or VerificationException => (
                 400,
                 "Bad Request",
                 "The request contains invalid parameters.",

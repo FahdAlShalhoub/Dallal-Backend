@@ -12,7 +12,7 @@ public class SubmissionService(DatabaseContext _context)
 {
     private static readonly Dictionary<Type, PropertyInfo[]> _propertiesCache = [];
 
-    public async Task<Submission> CreateSubmission<T>(
+    public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
         Guid referenceId,
         T initData,
@@ -20,14 +20,24 @@ public class SubmissionService(DatabaseContext _context)
     )
         where T : class?
     {
-        var submission = new Submission
+        var submission = await _context
+            .Submissions.Where(s =>
+                s.Type == type
+                && s.ReferenceId == referenceId
+                && s.Status == SubmissionStatus.Pending
+            )
+            .FirstOrDefaultAsync();
+
+        submission ??= new Submission()
         {
             Id = Guid.NewGuid(),
             ReferenceId = referenceId,
             Type = type,
             Status = SubmissionStatus.Pending,
         };
+
         submission.Changes = GetChanges(initData, newData);
+
         _context.Submissions.Add(submission);
         await _context.SaveChangesAsync();
         return submission;

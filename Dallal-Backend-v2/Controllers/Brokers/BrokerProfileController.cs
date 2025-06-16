@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Controllers.Brokers.Dtos;
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dallal_Backend_v2.Controllers.Brokers;
 
 [Route("[controller]")]
-[Authorize(Roles = "Broker")]
+[Authorize()]
 public class BrokerProfileController(
     DatabaseContext _context,
     OtpService _otpService,
@@ -23,9 +24,12 @@ public class BrokerProfileController(
     {
         var userId = UserId;
         var userDto = await _context
-            .Users.Where(u => u.Id == userId)
+            .Users.Where(u => u.Id == userId && u.Broker != null)
             .Select(BrokerMapper.SelectUserToBrokerDto())
-            .FirstAsync();
+            .FirstOrDefaultAsync();
+
+        if (userDto == null)
+            throw new EntityNotFoundException(typeof(Broker), userId);
 
         return userDto;
     }
@@ -45,16 +49,18 @@ public class BrokerProfileController(
         var user = await _context.Users.Include(i => i.Broker).FirstAsync(i => i.Id == userId);
 
         user.Phone = phoneNumber;
-        if (user.Broker!.Status == Entities.Enums.BrokerStatus.Pending)
+        if (user.Broker == null)
+            user.AddBroker(new Broker(userId) { Status = BrokerStatus.Pending });
+
+        if (user.Broker!.Status is BrokerStatus.MissingData or BrokerStatus.Pending)
         {
-            // TODO create or replace submission
-            await _submissionService.CreateSubmission(
+            await _submissionService.UpsertSubmission(
                 SubmissionType.BrokerAccount,
                 userId,
                 user.Broker,
                 new Broker(userId)
                 {
-                    Status = Entities.Enums.BrokerStatus.Approved,
+                    Status = BrokerStatus.Approved,
                     AgencyAddress = user.Broker.AgencyAddress,
                     AgencyName = user.Broker.AgencyName,
                     AgencyPhone = user.Broker.AgencyPhone,
