@@ -116,7 +116,10 @@ public class AuthController(
             {
                 if (existingUser.Broker is not null)
                     return existingUser;
-                throw new UnauthorizedAccessException("Cannot register as an Broker");
+                var broker = new Broker(existingUser.Id) { Status = BrokerStatus.MissingData };
+                existingUser.AddBroker(broker);
+                await _context.SaveChangesAsync();
+                return existingUser;
             }
             case UserType.Admin:
             {
