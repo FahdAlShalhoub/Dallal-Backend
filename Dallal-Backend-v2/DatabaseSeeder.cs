@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Details;
 using Dallal_Backend_v2.Entities.Enums;
@@ -347,7 +348,8 @@ public static class DatabaseSeeder
         var existingBroker = context.Find<Broker>(id);
         if (existingBroker == null)
         {
-            var broker = new Broker
+            // Create the base user first
+            var user = new User
             {
                 Id = id,
                 Email = email,
@@ -357,8 +359,23 @@ public static class DatabaseSeeder
                 UpdatedAt = DateTime.UtcNow,
                 DeletedAt = null,
                 PreferredLanguage = "en",
+                LoginAttempts = 0,
+                LockoutUntil = null,
             };
-            context.Set<Broker>().Add(broker);
+
+            // Then create the broker
+            var broker = new Broker(id)
+            {
+                Status = BrokerStatus.Pending,
+                AgencyName = null,
+                AgencyAddress = null,
+                AgencyPhone = null,
+                AgencyEmail = null,
+                AgencyWebsite = null,
+                AgencyLogo = null,
+            };
+            user.AddBroker(broker);
+            context.Set<User>().Add(user);
         }
     }
 

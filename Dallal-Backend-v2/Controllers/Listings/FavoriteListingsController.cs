@@ -38,11 +38,12 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
     [HttpPost()]
     public async Task AddFavoriteListing([FromBody] List<Guid> newFavorites)
     {
+        var userId = UserId;
         var buyer =
             await _context
                 .Buyers.Include(b => b.FavoriteListings)
-                .FirstOrDefaultAsync(b => b.Id == UserId)
-            ?? throw new EntityNotFoundException(typeof(Buyer), UserId);
+                .FirstOrDefaultAsync(b => b.Id == userId)
+            ?? throw new EntityNotFoundException(typeof(Buyer), userId);
 
         var favoriteListings = await _context
             .Listings.Where(l => newFavorites.Contains(l.Id))
@@ -64,11 +65,12 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
     [HttpDelete]
     public async Task RemoveFavoriteListing([FromBody] List<Guid> favoritesToRemove)
     {
+        var userId = UserId;
         var buyer =
             await _context
                 .Buyers.Include(b => b.FavoriteListings)
-                .FirstOrDefaultAsync(b => b.Id == UserId)
-            ?? throw new EntityNotFoundException(typeof(Buyer), UserId);
+                .FirstOrDefaultAsync(b => b.Id == userId)
+            ?? throw new EntityNotFoundException(typeof(Buyer), userId);
 
         var favoriteListings = await _context
             .Listings.Where(l => favoritesToRemove.Contains(l.Id))

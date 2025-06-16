@@ -134,7 +134,7 @@ public class ProblemDetailsExceptionMiddleware
                 "https://tools.ietf.org/html/rfc7231#section-6.5.1"
             ),
 
-            KeyNotFoundException => (
+            EntityNotFoundException or KeyNotFoundException => (
                 404,
                 "Not Found",
                 "The requested resource was not found.",

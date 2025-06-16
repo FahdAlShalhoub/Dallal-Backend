@@ -8,10 +8,12 @@ namespace Dallal_Backend_v2;
 
 public class DatabaseContext : DbContext
 {
-    public DbSet<BaseUser> Users { get; set; }
-    public DbSet<Broker> Brokers { get; set; }
+    public DbSet<User> Users { get; set; }
+
     public DbSet<Buyer> Buyers { get; set; }
+    public DbSet<Broker> Brokers { get; set; }
     public DbSet<Admin> Admins { get; set; }
+
     public DbSet<Listing> Listings { get; set; }
     public DbSet<ListingDetail> ListingDetails { get; set; }
     public DbSet<DetailsDefinition> DetailsDefinitions { get; set; }
@@ -40,6 +42,22 @@ public class DatabaseContext : DbContext
         {
             listing.HasIndex(e => e.CreatedAt).IsDescending();
             listing.Property(e => e.Location).HasColumnType("geometry (point)").IsRequired();
+        });
+
+        modelBuilder.Entity<User>(user =>
+        {
+            user.HasOne(e => e.Broker)
+                .WithOne(e => e.User)
+                .HasPrincipalKey<User>(e => e.Id)
+                .HasForeignKey<Broker>(e => e.Id);
+            user.HasOne(e => e.Buyer)
+                .WithOne()
+                .HasPrincipalKey<User>(e => e.Id)
+                .HasForeignKey<Buyer>(e => e.Id);
+            user.HasOne(e => e.Admin)
+                .WithOne()
+                .HasPrincipalKey<User>(e => e.Id)
+                .HasForeignKey<Admin>(e => e.Id);
         });
 
         modelBuilder.Entity<Buyer>(buyer =>

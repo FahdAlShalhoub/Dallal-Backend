@@ -13,8 +13,8 @@ public static class ListingMapper
             Broker = new BrokerDto
             {
                 Id = listing.Broker.Id,
-                Email = listing.Broker.Email,
-                Name = listing.Broker.Name,
+                Email = listing.Broker.User.Email,
+                Name = listing.Broker.User.Name,
             },
             Area = new LocalizedStringDto(listing.Area.Name),
             Currency = listing.Currency,

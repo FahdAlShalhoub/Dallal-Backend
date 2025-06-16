@@ -6,6 +6,7 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -15,9 +16,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dallal_Backend_v2
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250616162645_UserChanges")]
+    partial class UserChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -360,10 +363,6 @@ namespace Dallal_Backend_v2
 
                     b.Property<string>("ProfileImage")
                         .HasColumnType("text");
-
-                    b.PrimitiveCollection<int[]>("Roles")
-                        .IsRequired()
-                        .HasColumnType("integer[]");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

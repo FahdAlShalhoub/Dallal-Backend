@@ -22,7 +22,7 @@ public class AuthController(
 ) : DallalController
 {
     [HttpPost("oauth")]
-    public async Task<AuthenticatedUser> OAuth([FromBody] OAuthRequest request)
+    public async Task<AuthenticatedUserDto> OAuth([FromBody] OAuthRequest request)
     {
         try
         {
@@ -37,13 +37,14 @@ public class AuthController(
             firebaseToken.Claims.TryGetValue("picture", out object? image);
             firebaseToken.Claims.TryGetValue("given_name", out object? givenName);
             firebaseToken.Claims.TryGetValue("family_name", out object? familyName);
-            BaseUser user = await GetOrCreateUser(
+            User user = await GetOrCreateUser(
                 email,
-                image,
-                givenName,
-                familyName,
+                image as string,
+                givenName as string,
+                familyName as string,
                 request.UserType,
-                request.PreferredLanguage
+                request.PreferredLanguage,
+                validatePassword: false
             );
 
             return CreateToken(user);
@@ -54,86 +55,88 @@ public class AuthController(
         }
     }
 
-    private async Task<BaseUser> GetOrCreateUser(
+    private async Task<User> GetOrCreateUser(
         string email,
-        object? image,
-        object? givenName,
-        object? familyName,
+        string? image,
+        string? givenName,
+        string? familyName,
         UserType userType,
-        string preferredLanguage
+        string preferredLanguage,
+        string? phone = null,
+        string? password = null,
+        bool validatePassword = true
     )
     {
+        var existingUser = await _context
+            .Users.Include(i => i.Buyer)
+            .Include(i => i.Broker)
+            .Include(i => i.Admin)
+            .SingleOrDefaultAsync(x => x.Email == email);
+
+        string fullName = $"{givenName ?? ""} {familyName ?? ""}";
+        fullName = fullName.Trim();
+        if (fullName == string.Empty)
+            fullName = email;
+
+        if (existingUser is null)
+        {
+            existingUser = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                Password =
+                    password == null ? "oauth-password" : BCrypt.Net.BCrypt.HashPassword(password),
+                Name = fullName,
+                ProfileImage = image,
+                Phone = phone,
+                PreferredLanguage = preferredLanguage,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                DeletedAt = null,
+                LoginAttempts = 0,
+                LockoutUntil = null,
+            };
+            _context.Users.Add(existingUser);
+        }
+        else if (validatePassword)
+        {
+            await VerifyPassword(password, existingUser);
+        }
+
         switch (userType)
         {
             case UserType.Buyer:
             {
-                Buyer? buyer = await _context.Buyers.SingleOrDefaultAsync(x => x.Email == email);
-                if (buyer is not null)
-                {
-                    return buyer;
-                }
-
-                var fullName = $"{givenName as string ?? ""} {familyName as string ?? ""}";
-
-                if (givenName == null && familyName == null)
-                {
-                    fullName = email;
-                }
-
-                buyer = new Buyer
-                {
-                    Id = new Guid(),
-                    Email = email,
-                    Name = fullName,
-                    ProfileImage = image as string,
-                    Password = "oAuth User",
-                    PreferredLanguage = preferredLanguage,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    DeletedAt = null,
-                };
-                await _context.Buyers.AddAsync(buyer);
+                if (existingUser.Buyer is not null)
+                    return existingUser;
+                var buyer = new Buyer(existingUser.Id);
+                existingUser.AddBuyer(buyer);
                 await _context.SaveChangesAsync();
-
-                return buyer;
+                return existingUser;
             }
             case UserType.Broker:
             {
-                Broker? broker = await _context.Brokers.SingleOrDefaultAsync(x => x.Email == email);
-                if (broker is not null)
+                if (existingUser.Broker is not null)
+                    return existingUser;
+                var broker = new Broker(existingUser.Id)
                 {
-                    return broker;
-                }
-
-                var fullName = $"{givenName as string ?? ""} {familyName as string ?? ""}";
-
-                if (givenName == null && familyName == null)
-                {
-                    fullName = email;
-                }
-
-                broker = new Broker
-                {
-                    Id = new Guid(),
-                    Email = email,
                     Status = BrokerStatus.Pending,
-                    Name = fullName,
-                    ProfileImage = image as string,
-                    Password = "oAuth User",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    PreferredLanguage = preferredLanguage,
-                    DeletedAt = null,
+                    AgencyName = null,
+                    AgencyAddress = null,
+                    AgencyPhone = null,
+                    AgencyEmail = null,
+                    AgencyWebsite = null,
+                    AgencyLogo = null,
                 };
-                await _context.Brokers.AddAsync(broker);
+                existingUser.AddBroker(broker);
                 await _context.SaveChangesAsync();
-
-                return broker;
+                return existingUser;
             }
             case UserType.Admin:
             {
-                Admin? admin = await _context.Admins.SingleOrDefaultAsync(x => x.Email == email);
-                return admin ?? throw new UnauthorizedAccessException("Invalid Email");
+                if (existingUser.Admin is not null)
+                    return existingUser;
+                throw new UnauthorizedAccessException("Cannot register as an Admin");
             }
             default:
                 throw new UnauthorizedAccessException("Invalid User Type");
@@ -141,22 +144,10 @@ public class AuthController(
     }
 
     [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthenticatedUser), StatusCodes.Status200OK)]
-    public async Task<AuthenticatedUser> Login([FromBody] LoginRequest request)
+    [ProducesResponseType(typeof(AuthenticatedUserDto), StatusCodes.Status200OK)]
+    public async Task<AuthenticatedUserDto> Login([FromBody] LoginRequest request)
     {
-        BaseUser? user = request.UserType switch
-        {
-            UserType.Buyer => await _context.Buyers.SingleOrDefaultAsync(buyer =>
-                buyer.Email == request.Email
-            ),
-            UserType.Broker => await _context.Brokers.SingleOrDefaultAsync(broker =>
-                broker.Email == request.Email
-            ),
-            UserType.Admin => await _context.Admins.SingleOrDefaultAsync(admin =>
-                admin.Email == request.Email
-            ),
-            _ => throw new UnauthorizedAccessException("Invalid User Type"),
-        };
+        var user = await _context.Users.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
 
         if (user == null)
             throw new UnauthorizedAccessException("Invalid Email or Password");
@@ -168,16 +159,7 @@ public class AuthController(
             );
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
-        {
-            user.LoginAttempts++;
-            if (user.LoginAttempts >= 3)
-            {
-                user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
-            }
-            await _context.SaveChangesAsync();
-            throw new UnauthorizedAccessException("Invalid Email or Password");
-        }
+        await VerifyPassword(request.Password, user);
 
         user.LoginAttempts = 0;
         user.LockoutUntil = null;
@@ -186,9 +168,37 @@ public class AuthController(
         return CreateToken(user);
     }
 
+    [HttpPost("signup")]
+    [ProducesResponseType(typeof(AuthenticatedUserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<AuthenticatedUserDto> Signup([FromBody] SignupRequest request)
+    {
+        try
+        {
+            User user = await GetOrCreateUser(
+                email: request.Email,
+                image: request.ProfileImage,
+                givenName: request.Name,
+                familyName: null,
+                userType: request.UserType,
+                preferredLanguage: request.PreferredLanguage,
+                phone: request.Phone,
+                password: request.Password,
+                validatePassword: true
+            );
+
+            return CreateToken(user);
+        }
+        catch (Exception ex)
+            when (ex.Message.Contains("duplicate key value violates unique constraint"))
+        {
+            throw new BadHttpRequestException("Email already in use");
+        }
+    }
+
     [HttpPut("info")]
     [Authorize]
-    public async Task<UserInfo> UpdateLanguage([FromBody] UpdateUserRequest request)
+    public async Task<UserInfoDto> UpdateLanguage([FromBody] UpdateUserRequest request)
     {
         if (request.Language is null && request.Name is null)
         {
@@ -202,20 +212,16 @@ public class AuthController(
             ?? throw new Exception("User not found");
 
         if (request.Language != null)
-        {
             user.PreferredLanguage = request.Language;
-        }
 
         if (request.Name != null)
-        {
             user.Name = request.Name;
-        }
 
         await _context.SaveChangesAsync();
-        return GenerateUserInfoDto(user, UserType.Buyer);
+        return GenerateUserInfoDto(user);
     }
 
-    private AuthenticatedUser CreateToken(BaseUser user)
+    private AuthenticatedUserDto CreateToken(User user)
     {
         List<Claim> claims =
         [
@@ -227,34 +233,45 @@ public class AuthController(
             ),
         ];
 
-        UserType userType = user switch
-        {
-            Buyer => UserType.Buyer,
-            Broker => UserType.Broker,
-            Admin => UserType.Admin,
-            _ => throw new Exception("Invalid User Type"),
-        };
+        if (user.Buyer is not null)
+            claims.Add(new Claim(ClaimTypes.Role, UserType.Buyer.ToString()));
+        if (user.Broker is not null)
+            claims.Add(new Claim(ClaimTypes.Role, UserType.Broker.ToString()));
+        if (user.Admin is not null)
+            claims.Add(new Claim(ClaimTypes.Role, UserType.Admin.ToString()));
 
-        claims.Add(new Claim(ClaimTypes.Role, userType.ToString()));
-
-        return new AuthenticatedUser
+        return new AuthenticatedUserDto
         {
             AccessToken = _jwtService.GenerateToken(claims),
-            User = GenerateUserInfoDto(user, userType),
+            User = GenerateUserInfoDto(user),
         };
     }
 
-    private static UserInfo GenerateUserInfoDto(BaseUser user, UserType userType)
+    private static UserInfoDto GenerateUserInfoDto(User user)
     {
-        return new UserInfo
+        return new UserInfoDto
         {
             Image = user.ProfileImage!,
             Name = user.Name!,
             Email = user.Email!,
-            Type = userType,
             Phone = user.Phone,
+            Roles = user.Roles,
             PreferredLanguage = user.PreferredLanguage,
         };
+    }
+
+    private async Task VerifyPassword(string? password, User user)
+    {
+        if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
+        {
+            user.LoginAttempts++;
+            if (user.LoginAttempts >= 3)
+            {
+                user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
+            }
+            await _context.SaveChangesAsync();
+            throw new UnauthorizedAccessException("Invalid Email or Password");
+        }
     }
 }
 
