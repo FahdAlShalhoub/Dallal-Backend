@@ -62,7 +62,6 @@ public class AuthController(
         string? familyName,
         UserType userType,
         string preferredLanguage,
-        string? phone = null,
         string? password = null,
         bool validatePassword = true
     )
@@ -88,7 +87,6 @@ public class AuthController(
                     password == null ? "oauth-password" : BCrypt.Net.BCrypt.HashPassword(password),
                 Name = fullName,
                 ProfileImage = image,
-                Phone = phone,
                 PreferredLanguage = preferredLanguage,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
@@ -120,7 +118,7 @@ public class AuthController(
                     return existingUser;
                 var broker = new Broker(existingUser.Id)
                 {
-                    Status = BrokerStatus.Pending,
+                    Status = BrokerStatus.MissingData,
                     AgencyName = null,
                     AgencyAddress = null,
                     AgencyPhone = null,
@@ -182,7 +180,6 @@ public class AuthController(
                 familyName: null,
                 userType: request.UserType,
                 preferredLanguage: request.PreferredLanguage,
-                phone: request.Phone,
                 password: request.Password,
                 validatePassword: true
             );

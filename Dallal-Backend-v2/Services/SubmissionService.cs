@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
+using Dallal_Backend_v2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Services;
@@ -67,9 +68,14 @@ public class SubmissionService(DatabaseContext _context)
     {
         if (!_propertiesCache.TryGetValue(typeof(T), out var properties))
         {
-            properties = typeof(T).GetProperties(
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
-            );
+            properties = typeof(T)
+                .GetProperties(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
+                )
+                .Where(p =>
+                    !p.GetCustomAttributes(typeof(DoNotIncludeInSubmissionAttribute), false).Any()
+                )
+                .ToArray();
             _propertiesCache[typeof(T)] = properties;
         }
 

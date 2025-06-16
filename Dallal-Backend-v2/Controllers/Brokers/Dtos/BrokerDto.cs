@@ -1,21 +1,14 @@
 using Dallal_Backend_v2.Entities.Enums;
-using Dallal_Backend_v2.Helpers;
 
-namespace Dallal_Backend_v2.Entities.Users;
+namespace Dallal_Backend_v2.Controllers.Brokers.Dtos;
 
-public class Broker
+public class BrokerDto
 {
-    private Broker() { }
-
-    public Broker(Guid id)
-    {
-        Id = id;
-    }
-
     public Guid Id { get; set; }
-
-    [DoNotIncludeInSubmission]
-    public User User { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? Name { get; set; }
+    public string? ProfileImage { get; set; }
     public BrokerStatus Status { get; set; }
     public string? AgencyName { get; set; }
     public string? AgencyAddress { get; set; }

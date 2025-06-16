@@ -16,8 +16,6 @@ public record SignupRequest
     [Required]
     public string Name { get; init; }
 
-    public string? Phone { get; init; }
-
     public string? ProfileImage { get; init; }
 
     [Required]
