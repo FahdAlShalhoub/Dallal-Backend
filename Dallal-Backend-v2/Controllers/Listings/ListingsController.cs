@@ -36,7 +36,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
     }
 
     [HttpGet(Name = "GetListings")]
-    public async Task<GetListingsResponse> Listings([FromQuery] ListingsSearchDto searchParams)
+    public async Task<PaginatedList<ListingDto>> Listings([FromQuery] ListingsSearchDto searchParams)
     {
         var query = _context.Listings.AsQueryable();
         query = await ConstructFilter(
@@ -67,15 +67,12 @@ public class ListingsController(DatabaseContext _context) : DallalController
 
         var count = await query.CountAsync();
 
-        return new GetListingsResponse
-        {
-            ListingsList = new PaginatedList<ListingDto>(
-                listings,
-                searchParams.PageNumber,
-                count,
-                searchParams.PageSize
-            ),
-        };
+        return new PaginatedList<ListingDto>(
+            listings,
+            searchParams.PageNumber,
+            count,
+            searchParams.PageSize
+        );
     }
 
     private async Task<IQueryable<Listing>> ConstructFilter(

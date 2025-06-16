@@ -3,11 +3,6 @@ using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
-public class GetListingsResponse
-{
-    public PaginatedList<ListingDto> ListingsList { get; set; }
-}
-
 public class GetRecentListingsResponse
 {
     public int RecentListingsCount { get; set; }
