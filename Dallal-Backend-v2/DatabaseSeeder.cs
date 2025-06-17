@@ -1,8 +1,6 @@
-using BCrypt.Net;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Details;
 using Dallal_Backend_v2.Entities.Enums;
-using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;

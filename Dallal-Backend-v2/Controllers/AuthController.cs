@@ -106,6 +106,11 @@ public class AuthController(
             await VerifyPassword(password, existingUser);
         }
 
+        return await CreateSubProfile(userType, existingUser);
+    }
+
+    private async Task<User> CreateSubProfile(UserType userType, User existingUser)
+    {
         switch (userType)
         {
             case UserType.Buyer:
@@ -187,6 +192,21 @@ public class AuthController(
         {
             throw new BadHttpRequestException("Email already in use");
         }
+    }
+
+    [HttpPost("authorized-signup")]
+    [Authorize()]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task AuthorizedSignup(UserType userType)
+    {
+        var userId = UserId;
+        var user = await _context
+            .Users.Include(u => u.Buyer)
+            .Include(u => u.Broker)
+            .Include(u => u.Admin)
+            .FirstAsync(u => u.Id == userId);
+
+        await CreateSubProfile(userType, user);
     }
 
     [HttpPut("info")]
