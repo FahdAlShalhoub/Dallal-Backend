@@ -76,7 +76,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
         );
     }
 
-    [HttpGet("Listings/{id}", Name = "GetListingDetails")]
+    [HttpGet("{id:guid}", Name = "GetListingDetails")]
     public async Task<ListingDetailedDto> Listings([FromRoute] Guid id)
     {
         ListingDetailedDto? query = await _context.Listings.AsQueryable()
