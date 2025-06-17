@@ -13,7 +13,9 @@ public record SignupRequest
     [MinLength(6)]
     public string Password { get; init; }
 
-    public string? Name { get; init; }
+    public string? FirstName { get; init; }
+
+    public string? LastName { get; init; }
 
     public string? ProfileImage { get; init; }
 

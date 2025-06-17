@@ -348,12 +348,18 @@ public static class DatabaseSeeder
         var existingBroker = context.Find<Broker>(id);
         if (existingBroker == null)
         {
+            // Parse the full name into first and last name
+            var nameParts = name.Split(' ', 2);
+            var firstName = nameParts[0];
+            var lastName = nameParts.Length > 1 ? nameParts[1] : null;
+
             // Create the base user first
             var user = new User
             {
                 Id = id,
                 Email = email,
-                Name = name,
+                FirstName = firstName,
+                LastName = lastName,
                 Password = BCrypt.Net.BCrypt.HashPassword("12345678"),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
