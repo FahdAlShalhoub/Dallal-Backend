@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
+using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,26 @@ public class ListingsController(DatabaseContext _context) : DallalController
             count,
             searchParams.PageSize
         );
+    }
+
+    [HttpGet("Listings/{id}", Name = "GetListingDetails")]
+    public async Task<ListingDetailedDto> Listings([FromRoute] Guid id)
+    {
+        ListingDetailedDto? query = await _context.Listings.AsQueryable()
+            .Where(listing => listing.Id == id)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Definition)
+            .Include(listing => listing.Details)
+            .ThenInclude(detail => detail.Option)
+            .Select(ListingMapper.SelectToDetailDto(UserIdOrNull))
+            .FirstOrDefaultAsync();
+
+        if (query == null)
+        {
+            throw new EntityNotFoundException("Listing not found");
+        }
+
+        return query;
     }
 
     private async Task<IQueryable<Listing>> ConstructFilter(
