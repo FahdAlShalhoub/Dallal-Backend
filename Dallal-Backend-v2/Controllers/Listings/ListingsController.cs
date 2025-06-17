@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
@@ -55,12 +54,23 @@ public class ListingsController(DatabaseContext _context) : DallalController
             searchParams.Details
         );
 
-        var listings = await query
+        query = query
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
-            .OrderBy(b => b.Id)
+            .OrderBy(b => b.Id);
+
+        query = searchParams.SortBy switch
+        {
+            ListingSortBy.Popular => query.OrderByDescending(listing => listing.CreatedAt),
+            ListingSortBy.Newest => query.OrderByDescending(listing => listing.CreatedAt),
+            ListingSortBy.Cheapest => query.OrderBy(listing => listing.CreatedAt),
+            ListingSortBy.MostExpensive => query.OrderByDescending(listing => listing.PricePerContract),
+            _ => query
+        };
+
+        var listings = await query
             .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
             .Select(ListingMapper.SelectToDto(UserIdOrNull))
@@ -175,6 +185,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
             );
             allAreas.AddRange(areas.Where(leafAreasInChildren.Contains));
         }
+
         return allAreas.Where(i => i.Children.IsNullOrEmpty()).ToList();
     }
 
@@ -240,6 +251,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
                 );
             }
         }
+
         if (definition.SearchBehavior == DetailDefinitionSearchBehavior.Or)
         {
             query = query.Where(listing =>
@@ -268,6 +280,7 @@ public class ListingsSearchDto
     public List<Guid>? AreaIds { get; set; }
     public List<RentalContractPeriod>? RentalContractPeriods { get; set; }
     public List<DetailSearchDto>? Details { get; set; }
+    public ListingSortBy? SortBy { get; set; }
 }
 
 public class DetailSearchDto
