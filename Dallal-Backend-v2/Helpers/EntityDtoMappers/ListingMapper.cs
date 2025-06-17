@@ -10,7 +10,7 @@ public static class ListingMapper
             Id = listing.Id,
             Name = listing.Name,
             Description = listing.Description,
-            Broker = new BrokerDto
+            Broker = new ListingBrokerDto
             {
                 Id = listing.Broker.Id,
                 Email = listing.Broker.User.Email,
@@ -41,7 +41,7 @@ public static class ListingMapper
             Id = listing.Id,
             Name = listing.Name,
             Description = listing.Description,
-            Broker = new BrokerDto
+            Broker = new ListingBrokerDto
             {
                 Id = listing.Broker.Id,
                 Email = listing.Broker.User.Email,

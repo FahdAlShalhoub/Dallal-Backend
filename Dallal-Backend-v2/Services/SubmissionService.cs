@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
+using Dallal_Backend_v2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Services;
@@ -11,7 +12,7 @@ public class SubmissionService(DatabaseContext _context)
 {
     private static readonly Dictionary<Type, PropertyInfo[]> _propertiesCache = [];
 
-    public async Task<Submission> CreateSubmission<T>(
+    public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
         Guid referenceId,
         T initData,
@@ -19,14 +20,24 @@ public class SubmissionService(DatabaseContext _context)
     )
         where T : class?
     {
-        var submission = new Submission
+        var submission = await _context
+            .Submissions.Where(s =>
+                s.Type == type
+                && s.ReferenceId == referenceId
+                && s.Status == SubmissionStatus.Pending
+            )
+            .FirstOrDefaultAsync();
+
+        submission ??= new Submission()
         {
             Id = Guid.NewGuid(),
             ReferenceId = referenceId,
             Type = type,
             Status = SubmissionStatus.Pending,
         };
+
         submission.Changes = GetChanges(initData, newData);
+
         _context.Submissions.Add(submission);
         await _context.SaveChangesAsync();
         return submission;
@@ -67,9 +78,14 @@ public class SubmissionService(DatabaseContext _context)
     {
         if (!_propertiesCache.TryGetValue(typeof(T), out var properties))
         {
-            properties = typeof(T).GetProperties(
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
-            );
+            properties = typeof(T)
+                .GetProperties(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
+                )
+                .Where(p =>
+                    !p.GetCustomAttributes(typeof(DoNotIncludeInSubmissionAttribute), false).Any()
+                )
+                .ToArray();
             _propertiesCache[typeof(T)] = properties;
         }
 

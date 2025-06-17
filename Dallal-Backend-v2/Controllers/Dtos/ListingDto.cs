@@ -14,7 +14,7 @@ public class ListingDto
     public Guid Id { get; set; }
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
-    public BrokerDto Broker { get; set; } = default!;
+    public ListingBrokerDto Broker { get; set; } = default!;
     public LocalizedStringDto Area { get; set; } = default!;
     public string Currency { get; set; } = default!;
     public decimal PricePerContract { get; set; }
@@ -34,7 +34,7 @@ public class ListingDetailedDto {
      public Guid Id { get; set; }
      public string Name { get; set; } = default!;
      public string Description { get; set; } = default!;
-     public BrokerDto Broker { get; set; } = default!;
+     public ListingBrokerDto Broker { get; set; } = default!;
      public LocalizedStringDto Area { get; set; } = default!;
      public string Currency { get; set; } = default!;
      public decimal PricePerContract { get; set; }
@@ -51,7 +51,7 @@ public class ListingDetailedDto {
      public bool IsFavorite { get; set; }
 }
 
-public record BrokerDto
+public record ListingBrokerDto
 {
     public Guid Id { get; set; }
     public string Email { get; set; }

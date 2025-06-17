@@ -14,6 +14,7 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Sinks.Loki;
+using Twilio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(new S3(containerName, region, secretAccessKey, accessKeyId));
 
     builder.Services.AddScoped<SubmissionService>();
+    builder.Services.AddScoped<OtpService>();
 
     string? lokiUrl = builder.Configuration.GetRequiredSection("Loki")["Uri"];
     Trace.Assert(!string.IsNullOrEmpty(lokiUrl), "Loki url not found");
@@ -192,6 +194,12 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                     options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                 });
         });
+
+    string? twilioAccountSid = builder.Configuration.GetRequiredSection("Twilio")["AccountSid"];
+    Trace.Assert(!string.IsNullOrEmpty(twilioAccountSid), "Twilio Account SID not found");
+    string? twilioAuthToken = builder.Configuration.GetRequiredSection("Twilio")["AuthToken"];
+    Trace.Assert(!string.IsNullOrEmpty(twilioAuthToken), "Twilio Auth Token not found");
+    TwilioClient.Init(twilioAccountSid, twilioAuthToken);
 }
 else
 {

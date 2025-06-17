@@ -13,10 +13,7 @@ public record SignupRequest
     [MinLength(6)]
     public string Password { get; init; }
 
-    [Required]
-    public string Name { get; init; }
-
-    public string? Phone { get; init; }
+    public string? Name { get; init; }
 
     public string? ProfileImage { get; init; }
 
