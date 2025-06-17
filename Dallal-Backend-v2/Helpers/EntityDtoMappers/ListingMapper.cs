@@ -14,7 +14,7 @@ public static class ListingMapper
             {
                 Id = listing.Broker.Id,
                 Email = listing.Broker.User.Email,
-                Name = listing.Broker.User.Name,
+                Name = $"{listing.Broker.User.FirstName} {listing.Broker.User.LastName}".Trim(),
             },
             Area = new LocalizedStringDto(listing.Area.Name),
             Currency = listing.Currency,
@@ -45,7 +45,7 @@ public static class ListingMapper
             {
                 Id = listing.Broker.Id,
                 Email = listing.Broker.User.Email,
-                Name = listing.Broker.User.Name,
+                Name = $"{listing.Broker.User.FirstName} {listing.Broker.User.LastName}".Trim(),
             },
             Area = new LocalizedStringDto(listing.Area.Name),
             Currency = listing.Currency,

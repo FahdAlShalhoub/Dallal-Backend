@@ -72,10 +72,14 @@ public class AuthController(
             .Include(i => i.Admin)
             .SingleOrDefaultAsync(x => x.Email == email);
 
-        string fullName = $"{givenName ?? ""} {familyName ?? ""}";
-        fullName = fullName.Trim();
-        if (fullName == string.Empty)
-            fullName = email;
+        // Handle default values for first and last name
+        string firstName = givenName?.Trim();
+        string lastName = familyName?.Trim();
+
+        if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
+        {
+            firstName = email; // Use email as default if no name provided
+        }
 
         if (existingUser is null)
         {
@@ -85,7 +89,8 @@ public class AuthController(
                 Email = email,
                 Password =
                     password == null ? "oauth-password" : BCrypt.Net.BCrypt.HashPassword(password),
-                Name = fullName,
+                FirstName = firstName,
+                LastName = lastName,
                 ProfileImage = image,
                 PreferredLanguage = preferredLanguage,
                 CreatedAt = DateTime.UtcNow,
@@ -101,6 +106,11 @@ public class AuthController(
             await VerifyPassword(password, existingUser);
         }
 
+        return await CreateSubProfile(userType, existingUser);
+    }
+
+    private async Task<User> CreateSubProfile(UserType userType, User existingUser)
+    {
         switch (userType)
         {
             case UserType.Buyer:
@@ -167,8 +177,8 @@ public class AuthController(
             User user = await GetOrCreateUser(
                 email: request.Email,
                 image: request.ProfileImage,
-                givenName: request.Name,
-                familyName: null,
+                givenName: request.FirstName,
+                familyName: request.LastName,
                 userType: request.UserType,
                 preferredLanguage: request.PreferredLanguage,
                 password: request.Password,
@@ -184,11 +194,26 @@ public class AuthController(
         }
     }
 
+    [HttpPost("authorized-signup")]
+    [Authorize()]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task AuthorizedSignup(UserType userType)
+    {
+        var userId = UserId;
+        var user = await _context
+            .Users.Include(u => u.Buyer)
+            .Include(u => u.Broker)
+            .Include(u => u.Admin)
+            .FirstAsync(u => u.Id == userId);
+
+        await CreateSubProfile(userType, user);
+    }
+
     [HttpPut("info")]
     [Authorize]
     public async Task<UserInfoDto> UpdateLanguage([FromBody] UpdateUserRequest request)
     {
-        if (request.Language is null && request.Name is null)
+        if (request.Language is null && request.FirstName is null && request.LastName is null)
         {
             throw new BadHttpRequestException(
                 "Must provide at least one property to update for the user info"
@@ -202,8 +227,11 @@ public class AuthController(
         if (request.Language != null)
             user.PreferredLanguage = request.Language;
 
-        if (request.Name != null)
-            user.Name = request.Name;
+        if (request.FirstName != null)
+            user.FirstName = request.FirstName;
+
+        if (request.LastName != null)
+            user.LastName = request.LastName;
 
         await _context.SaveChangesAsync();
         return GenerateUserInfoDto(user);
@@ -240,7 +268,8 @@ public class AuthController(
         return new UserInfoDto
         {
             Image = user.ProfileImage!,
-            Name = user.Name!,
+            FirstName = user.FirstName!,
+            LastName = user.LastName!,
             Email = user.Email!,
             Phone = user.Phone,
             Roles = user.Roles,
@@ -263,4 +292,4 @@ public class AuthController(
     }
 }
 
-public record struct UpdateUserRequest(string? Name, string? Language);
+public record struct UpdateUserRequest(string? FirstName, string? LastName, string? Language);
