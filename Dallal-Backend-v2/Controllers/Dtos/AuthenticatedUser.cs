@@ -10,11 +10,11 @@ public record AuthenticatedUserDto
 
 public record UserInfoDto
 {
-    public string Image { get; init; }
-    public string FirstName { get; init; }
-    public string LastName { get; init; }
-    public string Email { get; init; }
+    public string? Image { get; init; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? Email { get; init; }
     public string? Phone { get; init; }
     public string? PreferredLanguage { get; init; }
-    public List<UserType> Roles { get; internal set; }
+    public List<UserType> Roles { get; init; }
 }

@@ -20,12 +20,9 @@ public class S3
         SecretAccessKey = secretAccessKey;
         AccessKeyId = accessKeyId;
 
-        var regionEndpoint = new AmazonS3Config {ServiceURL = region, ForcePathStyle = true};
+        var regionEndpoint = new AmazonS3Config { ServiceURL = region, ForcePathStyle = true };
 
-        if (
-            !string.IsNullOrWhiteSpace(accessKeyId)
-            && !string.IsNullOrWhiteSpace(secretAccessKey)
-        )
+        if (!string.IsNullOrWhiteSpace(accessKeyId) && !string.IsNullOrWhiteSpace(secretAccessKey))
         {
             var credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
             _client = new AmazonS3Client(credentials, regionEndpoint);
@@ -36,7 +33,7 @@ public class S3
         }
     }
 
-    public async Task<PresignedUrlDto> GetPresignedUrl(string fileName)
+    public async Task<PresignedUrlDto> GetPresignedUrl(string fileName, string? folderName = null)
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -45,8 +42,12 @@ public class S3
 
         // Generate a unique file key to avoid conflicts
         var guid = Guid.NewGuid();
-        var fileKey = $"documents/{guid}/{fileName}";
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            folderName = "no-folder";
+        }
         var guidFileName = $"{guid}_{fileName}";
+        var fileKey = $"documents/{folderName}/{guidFileName}";
 
         // Create the presigned URL request
         var request = new GetPreSignedUrlRequest
@@ -61,7 +62,7 @@ public class S3
         // Generate and return the presigned URL
         var presignedUrl = await _client.GetPreSignedURLAsync(request);
 
-        return new PresignedUrlDto {Url = presignedUrl, FileName = guidFileName};
+        return new PresignedUrlDto { Url = presignedUrl, FileName = guidFileName };
     }
 
     private static string GetContentType(string fileName)

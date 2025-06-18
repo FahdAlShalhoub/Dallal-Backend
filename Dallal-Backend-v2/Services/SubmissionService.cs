@@ -28,6 +28,8 @@ public class SubmissionService(DatabaseContext _context)
             )
             .FirstOrDefaultAsync();
 
+        var isNew = submission == null;
+
         submission ??= new Submission()
         {
             Id = Guid.NewGuid(),
@@ -37,8 +39,10 @@ public class SubmissionService(DatabaseContext _context)
         };
 
         submission.Changes = GetChanges(initData, newData);
-
-        _context.Submissions.Add(submission);
+        if (isNew)
+            _context.Submissions.Add(submission);
+        else
+            _context.Submissions.Update(submission);
         await _context.SaveChangesAsync();
         return submission;
     }

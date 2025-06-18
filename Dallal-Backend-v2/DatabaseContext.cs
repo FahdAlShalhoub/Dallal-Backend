@@ -31,6 +31,10 @@ public class DatabaseContext : DbContext
         {
             p.HaveColumnType("jsonb");
         });
+        configurationBuilder.Properties<Document>(p =>
+        {
+            p.HaveColumnType("jsonb");
+        });
 
         configurationBuilder.Properties<Enum>().HaveConversion<string>();
     }

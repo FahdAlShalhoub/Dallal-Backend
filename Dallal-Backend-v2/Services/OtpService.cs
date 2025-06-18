@@ -1,4 +1,5 @@
 using System.Security;
+using Dallal_Backend_v2.Controllers.Dtos;
 using Twilio;
 using Twilio.Http;
 using Twilio.Rest.Api.V2010.Account;
@@ -9,10 +10,11 @@ public class OtpService(IConfiguration configuration, IWebHostEnvironment _env)
 {
     private readonly string _verifyServiceSid = configuration["Twilio:ServiceSid"]!;
 
-    public async Task<string> GenerateOtp(string mobileNumber)
+    public async Task<OtpDto> GenerateOtp(string mobileNumber)
     {
         if (_env.IsDevelopment())
-            return "dev";
+            return new OtpDto { VerificationSid = "dev" };
+
         var result = await VerificationResource.CreateAsync(
             new CreateVerificationOptions(_verifyServiceSid, mobileNumber, "sms")
             {
@@ -21,7 +23,7 @@ public class OtpService(IConfiguration configuration, IWebHostEnvironment _env)
                 //     Thread.CurrentThread.CurrentUICulture.Name == "ar" ? "دلّال" : "Dallal",
             }
         );
-        return result.Sid;
+        return new OtpDto { VerificationSid = result.Sid };
     }
 
     public async Task VerifyOtp(string mobileNumber, string otp, string verificationSid)

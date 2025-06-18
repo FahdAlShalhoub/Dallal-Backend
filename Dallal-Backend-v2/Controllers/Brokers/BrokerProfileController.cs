@@ -1,10 +1,11 @@
 using Dallal_Backend_v2.Controllers.Brokers.Dtos;
-using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
+using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,8 @@ namespace Dallal_Backend_v2.Controllers.Brokers;
 public class BrokerProfileController(
     DatabaseContext _context,
     OtpService _otpService,
-    SubmissionService _submissionService
+    SubmissionService _submissionService,
+    S3 _s3Service
 ) : DallalController
 {
     [HttpGet()]
@@ -35,7 +37,7 @@ public class BrokerProfileController(
     }
 
     [HttpPost("otp")]
-    public async Task<string> SendOtp(string phoneNumber)
+    public async Task<OtpDto> SendOtp(string phoneNumber)
     {
         var verificationSid = await _otpService.GenerateOtp(phoneNumber);
         return verificationSid;
@@ -71,5 +73,59 @@ public class BrokerProfileController(
             );
         }
         await _context.SaveChangesAsync();
+    }
+
+    [HttpPut("info")]
+    [Authorize(Roles = "Broker")]
+    public async Task<BrokerDto> UpdateInfo([FromBody] UpdateBrokerInfoRequest request)
+    {
+        var userId = UserId;
+        var user = await _context.Users.Include(i => i.Broker).FirstAsync(i => i.Id == userId);
+        if (user.Broker == null)
+            throw new EntityNotFoundException(typeof(Broker), userId);
+
+        var newBroker = new Broker(userId)
+        {
+            AgencyName = request.AgencyName,
+            AgencyAddress = request.AgencyAddress,
+            AgencyPhone = request.AgencyPhone,
+            AgencyEmail = request.AgencyEmail,
+            AgencyWebsite = request.AgencyWebsite,
+            AgencyLogo = request.AgencyLogo,
+            User = user,
+        };
+
+        if (newBroker.IsMinimumInfoSet())
+        {
+            newBroker.Status = BrokerStatus.Approved;
+            await _submissionService.UpsertSubmission(
+                SubmissionType.BrokerAccount,
+                userId,
+                user.Broker,
+                newBroker
+            );
+        }
+        else
+        {
+            user.Broker.Status = BrokerStatus.Pending;
+            user.AddBroker(newBroker);
+        }
+
+        await _context.SaveChangesAsync();
+        return BrokerMapper.SelectUserToBrokerDto().Compile()(user);
+    }
+
+    [HttpPost("documents/upload-documents")]
+    [Authorize(Roles = "Broker")]
+    public async Task<PresignedUrlDto> UploadDocuments([FromBody] UploadDocumentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FileName))
+            throw new ArgumentException(
+                "File name cannot be null or empty",
+                nameof(request.FileName)
+            );
+
+        var presignedUrl = await _s3Service.GetPresignedUrl(request.FileName, "brokers/" + UserId);
+        return presignedUrl;
     }
 }

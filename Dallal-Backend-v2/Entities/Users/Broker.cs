@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Helpers;
 
@@ -23,4 +25,9 @@ public class Broker
     public string? AgencyEmail { get; set; }
     public string? AgencyWebsite { get; set; }
     public string? AgencyLogo { get; set; }
+
+    [Column(TypeName = "jsonb")]
+    public List<Document>? Documents { get; set; }
+
+    public bool IsMinimumInfoSet() => User.Phone != null && User.Email != null;
 }

@@ -32,10 +32,13 @@ public static class ListingMapper
                 Longitude = listing.Location.Coordinate.Y,
                 Latitude = listing.Location.Coordinate.X,
             },
-            IsFavorite = userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
+            IsFavorite =
+                userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
         };
 
-    public static Expression<Func<Listing, ListingDetailedDto>> SelectToDetailDto(Guid? userIdOrNull) =>
+    public static Expression<Func<Listing, ListingDetailedDto>> SelectToDetailDto(
+        Guid? userIdOrNull
+    ) =>
         listing => new ListingDetailedDto
         {
             Id = listing.Id,
@@ -45,7 +48,7 @@ public static class ListingMapper
             {
                 Id = listing.Broker.Id,
                 Email = listing.Broker.User.Email,
-                Name = $"{listing.Broker.User.FirstName} {listing.Broker.User.LastName}".Trim(),
+                Name = (listing.Broker.User.FirstName + " " + listing.Broker.User.LastName).Trim(),
             },
             Area = new LocalizedStringDto(listing.Area.Name),
             Currency = listing.Currency,
@@ -64,6 +67,7 @@ public static class ListingMapper
                 Longitude = listing.Location.Coordinate.Y,
                 Latitude = listing.Location.Coordinate.X,
             },
-            IsFavorite = userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
+            IsFavorite =
+                userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
         };
 }

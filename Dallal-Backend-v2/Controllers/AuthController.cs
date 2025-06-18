@@ -197,7 +197,7 @@ public class AuthController(
     [HttpPost("authorized-signup")]
     [Authorize()]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task AuthorizedSignup(UserType userType)
+    public async Task<AuthenticatedUserDto> AuthorizedSignup(UserType userType)
     {
         var userId = UserId;
         var user = await _context
@@ -207,6 +207,7 @@ public class AuthController(
             .FirstAsync(u => u.Id == userId);
 
         await CreateSubProfile(userType, user);
+        return CreateToken(user);
     }
 
     [HttpPut("info")]

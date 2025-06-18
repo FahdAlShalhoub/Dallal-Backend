@@ -1,4 +1,5 @@
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Details;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
 
@@ -8,6 +9,7 @@ public class ListingDetailDto
     {
         Id = listingDetail.Id;
         Name = new LocalizedStringDto(listingDetail.Definition.Name);
+        DisplayCategory = listingDetail.Definition.DisplayCategory;
         if (listingDetail.OptionId == null)
             Value = new LocalizedStringDto(
                 listingDetail.Value ?? throw new Exception("Value is null")
@@ -21,4 +23,5 @@ public class ListingDetailDto
     public Guid Id { get; set; }
     public LocalizedStringDto Name { get; set; }
     public LocalizedStringDto Value { get; set; }
+    public DetailDisplayCategory DisplayCategory { get; set; }
 }
