@@ -56,7 +56,7 @@ public class S3
             Key = fileKey,
             Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.AddMinutes(60), // URL expires in 60 minutes
-            ContentType = GetContentType(fileName),
+            // ContentType = GetContentType(fileName),
         };
 
         // Generate and return the presigned URL

@@ -1,9 +1,12 @@
 using Dallal_Backend_v2.Controllers.Brokers.Dtos;
 using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Submissions;
+using Dallal_Backend_v2.Controllers.Submissions.Dtos;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Helpers.EntityDtoMappers;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
@@ -34,6 +37,21 @@ public class BrokerProfileController(
             throw new EntityNotFoundException(typeof(Broker), userId);
 
         return userDto;
+    }
+
+    [HttpGet("submission")]
+    public async Task<SubmissionDto?> GetSubmission()
+    {
+        var userId = UserId;
+        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.ReferenceId == userId
+            && s.Type == SubmissionType.BrokerAccount
+            && (s.Status == SubmissionStatus.Rejected)
+        );
+        if (submission == null)
+            return null;
+
+        return SubmissionMapper.SelectToDto().Compile()(submission);
     }
 
     [HttpPost("otp")]
@@ -83,6 +101,14 @@ public class BrokerProfileController(
         var user = await _context.Users.Include(i => i.Broker).FirstAsync(i => i.Id == userId);
         if (user.Broker == null)
             throw new EntityNotFoundException(typeof(Broker), userId);
+
+        user.Email = request.Email;
+        user.FirstName = request.FirstName;
+        user.LastName = request.LastName;
+        user.ProfileImage = request.Image;
+        user.PreferredLanguage = Thread.CurrentThread.CurrentCulture.Name;
+
+        user.UpdatedAt = DateTime.UtcNow;
 
         var newBroker = new Broker(userId)
         {

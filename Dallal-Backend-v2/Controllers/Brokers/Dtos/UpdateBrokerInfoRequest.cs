@@ -1,6 +1,8 @@
+using Dallal_Backend_v2.Controllers.Profiles.Dtos;
+
 namespace Dallal_Backend_v2.Controllers.Brokers.Dtos;
 
-public class UpdateBrokerInfoRequest
+public class UpdateBrokerInfoRequest : UpdateProfileProfileRequest
 {
     public string? AgencyName { get; set; }
     public string? AgencyAddress { get; set; }
