@@ -20,11 +20,8 @@ public class Broker
     public User User { get; set; }
     public BrokerStatus Status { get; set; }
     public string? AgencyName { get; set; }
-    public string? AgencyAddress { get; set; }
-    public string? AgencyPhone { get; set; }
-    public string? AgencyEmail { get; set; }
-    public string? AgencyWebsite { get; set; }
-    public string? AgencyLogo { get; set; }
+    public string? CertificateNumber { get; set; }
+    public string? Description { get; set; }
 
     [Column(TypeName = "jsonb")]
     public List<Document>? Documents { get; set; }

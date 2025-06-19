@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace Dallal_Backend_v2.Entities.Submissions;
 
@@ -18,6 +19,17 @@ public class Submission
     public DateTime? ApprovedAt { get; set; }
     public DateTime? RejectedAt { get; set; }
     public string? RejectedReason { get; set; }
+
+    public T? GetExpectedValue<T>(string field)
+    {
+        var change = Changes.FirstOrDefault(c => c.Field == field);
+        if (change == null)
+            return default;
+        if (change.NewValue == null)
+            return default;
+
+        return JsonSerializer.Deserialize<T>(change.NewValue);
+    }
 }
 
 public class SubmissionChange

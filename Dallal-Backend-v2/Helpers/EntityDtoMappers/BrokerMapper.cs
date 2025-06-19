@@ -15,10 +15,7 @@ public static class BrokerMapper
             ProfileImage = user.ProfileImage,
             Status = user.Broker!.Status,
             AgencyName = user.Broker.AgencyName,
-            AgencyAddress = user.Broker.AgencyAddress,
-            AgencyPhone = user.Broker.AgencyPhone,
-            AgencyEmail = user.Broker.AgencyEmail,
-            AgencyWebsite = user.Broker.AgencyWebsite,
-            AgencyLogo = user.Broker.AgencyLogo,
+            CertificateNumber = user.Broker.CertificateNumber,
+            Description = user.Broker.Description,
         };
 }

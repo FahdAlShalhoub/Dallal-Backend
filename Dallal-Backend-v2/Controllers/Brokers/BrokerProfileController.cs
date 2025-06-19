@@ -28,14 +28,39 @@ public class BrokerProfileController(
     public async Task<BrokerDto> GetProfile()
     {
         var userId = UserId;
-        var userDto = await _context
+        var user = await _context
             .Users.Where(u => u.Id == userId && u.Broker != null)
-            .Select(BrokerMapper.SelectUserToBrokerDto())
+            .Include(u => u.Broker)
+            // .Select(BrokerMapper.SelectUserToBrokerDto())
             .FirstOrDefaultAsync();
 
-        if (userDto == null)
+        if (user == null)
             throw new EntityNotFoundException(typeof(Broker), userId);
+        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.ReferenceId == userId
+            && s.Type == SubmissionType.BrokerAccount
+            && s.Status == SubmissionStatus.Pending
+        );
 
+        var userDto = new BrokerDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            ProfileImage = user.ProfileImage,
+            Phone = user.Phone,
+            AgencyName =
+                submission?.GetExpectedValue<string>(nameof(Broker.AgencyName))
+                ?? user.Broker!.AgencyName,
+            CertificateNumber =
+                submission?.GetExpectedValue<string>(nameof(Broker.CertificateNumber))
+                ?? user.Broker!.CertificateNumber,
+            Description =
+                submission?.GetExpectedValue<string>(nameof(Broker.Description))
+                ?? user.Broker!.Description,
+            Status = user.Broker!.Status,
+        };
         return userDto;
     }
 
@@ -81,12 +106,9 @@ public class BrokerProfileController(
                 new Broker(userId)
                 {
                     Status = BrokerStatus.Approved,
-                    AgencyAddress = user.Broker.AgencyAddress,
+                    CertificateNumber = user.Broker.CertificateNumber,
                     AgencyName = user.Broker.AgencyName,
-                    AgencyPhone = user.Broker.AgencyPhone,
-                    AgencyEmail = user.Broker.AgencyEmail,
-                    AgencyWebsite = user.Broker.AgencyWebsite,
-                    AgencyLogo = user.Broker.AgencyLogo,
+                    Description = user.Broker.Description,
                 }
             );
         }
@@ -113,11 +135,8 @@ public class BrokerProfileController(
         var newBroker = new Broker(userId)
         {
             AgencyName = request.AgencyName,
-            AgencyAddress = request.AgencyAddress,
-            AgencyPhone = request.AgencyPhone,
-            AgencyEmail = request.AgencyEmail,
-            AgencyWebsite = request.AgencyWebsite,
-            AgencyLogo = request.AgencyLogo,
+            CertificateNumber = request.CertificateNumber,
+            Description = request.Description,
             User = user,
         };
 

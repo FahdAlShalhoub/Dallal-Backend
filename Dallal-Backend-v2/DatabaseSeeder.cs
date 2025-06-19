@@ -372,11 +372,8 @@ public static class DatabaseSeeder
             {
                 Status = BrokerStatus.Pending,
                 AgencyName = null,
-                AgencyAddress = null,
-                AgencyPhone = null,
-                AgencyEmail = null,
-                AgencyWebsite = null,
-                AgencyLogo = null,
+                CertificateNumber = null,
+                Description = null,
             };
             user.AddBroker(broker);
             context.Set<User>().Add(user);

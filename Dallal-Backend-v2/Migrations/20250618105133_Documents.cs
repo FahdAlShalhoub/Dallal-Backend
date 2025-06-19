@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Dallal_Backend_v2.Entities;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
