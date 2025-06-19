@@ -30,6 +30,9 @@ public class DetailsController : DallalController
                 Id = dd.Id,
                 Name = new(dd.Name),
                 Type = dd.Type,
+                PropertyTypes = dd.PropertyTypes,
+                IsHidden = dd.IsHidden,
+                SearchBehavior = dd.SearchBehavior,
                 Options =
                 [
                     .. dd.Options.Select(o => new DetailsDefinitionOptionDto

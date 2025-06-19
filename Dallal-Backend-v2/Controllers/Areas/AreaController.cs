@@ -19,7 +19,49 @@ public class AreaController(DatabaseContext _context) : DallalController
     {
         var areas = await _context
             .Areas.Include(a => a.Parent)
-            .Where(i => string.IsNullOrEmpty(search) || ((string)i.Name).Contains(search))
+            .Where(i =>
+                string.IsNullOrEmpty(search)
+                || ((string)i.Name).ToLower().Contains(search.ToLower())
+            )
+            .OrderBy(a => a.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return areas
+            .Select(a => new AreaDto
+            {
+                Id = a.Id,
+                Name = new LocalizedStringDto(a.Name),
+                Parent =
+                    a.Parent != null
+                        ? new AreaDto
+                        {
+                            Id = a.Parent.Id,
+                            Name = new LocalizedStringDto(a.Parent.Name),
+                            CreatedAt = a.Parent.CreatedAt,
+                        }
+                        : null,
+                CreatedAt = a.CreatedAt,
+            })
+            .ToList();
+    }
+
+    // leaf areas only
+    [HttpGet("leafs")]
+    public async Task<List<AreaDto>> GetLeafAreas(
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10
+    )
+    {
+        var areas = await _context
+            .Areas.Include(a => a.Parent)
+            .Where(i =>
+                string.IsNullOrEmpty(search)
+                || ((string)i.Name).ToLower().Contains(search.ToLower())
+            )
+            .Where(a => a.Children.Count == 0) // only leaf areas
             .OrderBy(a => a.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

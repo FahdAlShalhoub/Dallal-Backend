@@ -28,10 +28,10 @@ public class AdminSubmissionController(
             .OrderByDescending(s => s.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(SubmissionMapper.SelectToDto())
+            // .Select(SubmissionMapper.SelectToDto())
             .ToListAsync();
 
-        return submissions;
+        return submissions.Select(SubmissionMapper.SelectToDto().Compile()).ToList();
     }
 
     [HttpPost("{id}/approve")]
