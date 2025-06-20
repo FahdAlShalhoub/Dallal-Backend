@@ -36,7 +36,9 @@ public class ListingsController(DatabaseContext _context) : DallalController
     }
 
     [HttpGet(Name = "GetListings")]
-    public async Task<PaginatedList<ListingDto>> Listings([FromQuery] ListingsSearchDto searchParams)
+    public async Task<PaginatedList<ListingDto>> Listings(
+        [FromQuery] ListingsSearchDto searchParams
+    )
     {
         var query = _context.Listings.AsQueryable();
         query = await ConstructFilter(
@@ -66,8 +68,10 @@ public class ListingsController(DatabaseContext _context) : DallalController
             ListingSortBy.Popular => query.OrderByDescending(listing => listing.CreatedAt),
             ListingSortBy.Newest => query.OrderByDescending(listing => listing.CreatedAt),
             ListingSortBy.Cheapest => query.OrderBy(listing => listing.CreatedAt),
-            ListingSortBy.MostExpensive => query.OrderByDescending(listing => listing.PricePerContract),
-            _ => query
+            ListingSortBy.MostExpensive => query.OrderByDescending(listing =>
+                listing.PricePerContract
+            ),
+            _ => query,
         };
 
         var listings = await query
@@ -89,7 +93,8 @@ public class ListingsController(DatabaseContext _context) : DallalController
     [HttpGet("{id:guid}", Name = "GetListingDetails")]
     public async Task<ListingDetailedDto> Listings([FromRoute] Guid id)
     {
-        ListingDetailedDto? query = await _context.Listings.AsQueryable()
+        ListingDetailedDto? query = await _context
+            .Listings.AsQueryable()
             .Where(listing => listing.Id == id)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
@@ -121,6 +126,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
         List<DetailSearchDto>? details
     )
     {
+        query = query.Where(listing => listing.Status == ListingStatus.Active);
         query = await FilterDetails(query, details);
         query = await FilterAreas(query, areaIds);
         query = query.WhereIf(

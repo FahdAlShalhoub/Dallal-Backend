@@ -11,6 +11,7 @@ namespace Dallal_Backend_v2.Services;
 public class SubmissionService(DatabaseContext _context)
 {
     private static readonly Dictionary<Type, PropertyInfo[]> _propertiesCache = [];
+    private static readonly JsonSerializerOptions _jsonOptions = CreateJsonOptions();
 
     public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
@@ -109,20 +110,28 @@ public class SubmissionService(DatabaseContext _context)
             {
                 var initValue = initData == null ? null : property.GetValue(initData);
                 var newValue = newData == null ? null : property.GetValue(newData);
+
                 if (initValue != newValue)
                 {
                     changes.Add(
                         new SubmissionChange
                         {
                             Field = prefix + property.Name,
-                            OldValue = JsonSerializer.Serialize(initValue),
-                            NewValue = JsonSerializer.Serialize(newValue),
+                            OldValue = JsonSerializer.Serialize(initValue, _jsonOptions),
+                            NewValue = JsonSerializer.Serialize(newValue, _jsonOptions),
                         }
                     );
                 }
             }
         }
         return changes;
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        var _jsonOptions = new JsonSerializerOptions();
+        _jsonOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
+        return _jsonOptions;
     }
 
     private async Task ApplyChanges(Submission submission)
@@ -182,7 +191,7 @@ public class SubmissionService(DatabaseContext _context)
         if (change.NewValue != null)
             property.SetValue(
                 reference,
-                JsonSerializer.Deserialize(change.NewValue, property.PropertyType)
+                JsonSerializer.Deserialize(change.NewValue, property.PropertyType, _jsonOptions)
             );
         else
             property.SetValue(reference, null);

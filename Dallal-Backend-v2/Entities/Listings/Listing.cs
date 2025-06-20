@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
+using Dallal_Backend_v2.Helpers;
 using NetTopologySuite.Geometries;
-using Point = NetTopologySuite.Geometries.Point;
+using NetTopologySuite.IO.Converters;
 
 namespace Dallal_Backend_v2.Entities;
 
@@ -28,6 +30,7 @@ public class Listing
     public DateTime UpdatedAt { get; set; }
 
     [Column(TypeName = "geometry (point)")]
+    [JsonConverter(typeof(GeoJsonConverterFactory))]
     public Geometry Location { get; set; } = default!;
     public decimal PricePerYear
     {
@@ -48,5 +51,7 @@ public class Listing
     }
 
     public ListingStatus Status { get; set; }
+
+    [DoNotIncludeInSubmission]
     public List<Buyer> Favorites { get; set; } = [];
 }
