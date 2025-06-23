@@ -44,7 +44,6 @@ public class SubmissionService(DatabaseContext _context)
             _context.Submissions.Add(submission);
         else
             _context.Submissions.Update(submission);
-        await _context.SaveChangesAsync();
         return submission;
     }
 
@@ -190,6 +189,12 @@ public class SubmissionService(DatabaseContext _context)
             ?? throw new InvalidOperationException(
                 $"Property '{change.Field}' not found on type '{reference.GetType().Name}'."
             );
+        Console.WriteLine(
+            $"Applying change to property: {property.Name} (Type: {property.PropertyType.Name})"
+        );
+        Console.WriteLine(
+            $"Old Value: {change.OldValue ?? "null"}, New Value: {change.NewValue ?? "null"}"
+        );
         if (change.NewValue != null)
             property.SetValue(
                 reference,

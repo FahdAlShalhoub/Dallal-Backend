@@ -62,7 +62,7 @@ public class BrokerListingsController(
                         OptionId = detail.OptionId,
                     })
                     .ToList() ?? [],
-            Status = ListingStatus.Active,
+            Status = ListingStatus.Pending,
             CreatedAt = DateTime.UtcNow,
             Images = listingDto
                 .Images.Select(image => new Document(
@@ -81,12 +81,18 @@ public class BrokerListingsController(
         };
 
         _context.Listings.Add(listing);
-        await _submissionService.UpsertSubmission(
-            SubmissionType.Listing,
-            listing.Id,
-            null,
-            listing
-        );
+        (
+            await _submissionService.UpsertSubmission(
+                SubmissionType.Listing,
+                listing.Id,
+                null,
+                listing
+            )
+        )
+            .Changes.Single(i => i.Field == nameof(Listing.Status))
+            .NewValue = ((int)ListingStatus.Active).ToString();
+
+        await _context.SaveChangesAsync();
     }
 
     private async Task ValidateDetails(List<DetailsDto> details, PropertyType propertyType)
@@ -173,5 +179,29 @@ public class BrokerListingsController(
                     $"Detail with definition id {requiredDefinition.Id} is required"
                 );
         }
+    }
+
+    [HttpGet("my-listings")]
+    public async Task<PaginatedList<ListingDto>> MyListings(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] ListingStatus status = ListingStatus.Active
+    )
+    {
+        var listings = await _context
+            .Listings.Where(l => l.BrokerId == UserId)
+            .Where(l => l.Status == status)
+            .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(ListingMapper.SelectToQueryDto(null))
+            .ToListAsync();
+
+        var totalCount = await _context.Listings.CountAsync(l => l.BrokerId == UserId);
+
+        var dtos = await Task.WhenAll(
+            listings.Select(l => ListingMapper.SelectToDto(l, _s3Service))
+        );
+        return new PaginatedList<ListingDto>([.. dtos], totalCount, page, pageSize);
     }
 }
