@@ -2,6 +2,8 @@ using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Entities;
 
 namespace Dallal_Backend_v2.ThirdParty;
 
@@ -43,11 +45,9 @@ public class S3
         // Generate a unique file key to avoid conflicts
         var guid = Guid.NewGuid();
         if (string.IsNullOrWhiteSpace(folderName))
-        {
             folderName = "no-folder";
-        }
-        var guidFileName = $"{guid}_{fileName}";
-        var fileKey = $"documents/{folderName}/{guidFileName}";
+
+        var fileKey = $"documents/{folderName}/{guid}_{fileName}";
 
         // Create the presigned URL request
         var request = new GetPreSignedUrlRequest
@@ -56,13 +56,18 @@ public class S3
             Key = fileKey,
             Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.AddMinutes(60), // URL expires in 60 minutes
-            // ContentType = GetContentType(fileName),
+            ContentType = GetContentType(fileName),
         };
 
         // Generate and return the presigned URL
         var presignedUrl = await _client.GetPreSignedURLAsync(request);
 
-        return new PresignedUrlDto { Url = presignedUrl, FileName = guidFileName };
+        return new PresignedUrlDto
+        {
+            Url = presignedUrl,
+            FileName = fileKey,
+            ViewUrl = await GetViewUrl(fileKey),
+        };
     }
 
     private static string GetContentType(string fileName)
@@ -77,13 +82,52 @@ public class S3
             ".doc" => "application/msword",
             ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             ".txt" => "text/plain",
+            ".mp4" => "video/mp4",
+            ".mov" => "video/quicktime",
+            ".avi" => "video/x-msvideo",
+            ".webm" => "video/webm",
+            ".mkv" => "video/x-matroska",
+            ".wmv" => "video/x-ms-wmv",
             _ => "application/octet-stream",
+        };
+    }
+
+    private async Task<string> GetViewUrl(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+
+        return await _client.GetPreSignedURLAsync(
+            new GetPreSignedUrlRequest
+            {
+                Verb = HttpVerb.GET,
+                BucketName = ContainerName,
+                Key = fileName,
+                Expires = DateTime.UtcNow.AddDays(1),
+            }
+        );
+    }
+
+    public async Task<DocumentDto?> CreateDocumentDto(Document? doc)
+    {
+        if (doc == null)
+            return null;
+        return new DocumentDto
+        {
+            FileName = doc.FileName,
+            NameInBucket = doc.NameInBucket,
+            PlaceHolderNameInBucket = doc.PlaceHolderNameInBucket,
+            ViewUrl = await GetViewUrl(doc.NameInBucket),
+            PlaceHolderViewUrl = string.IsNullOrWhiteSpace(doc.PlaceHolderNameInBucket)
+                ? null
+                : await GetViewUrl(doc.PlaceHolderNameInBucket),
         };
     }
 }
 
 public record PresignedUrlDto
 {
-    public string Url { get; set; }
-    public string FileName { get; set; }
+    public required string Url { get; set; }
+    public required string FileName { get; set; }
+    public required string ViewUrl { get; set; }
 }

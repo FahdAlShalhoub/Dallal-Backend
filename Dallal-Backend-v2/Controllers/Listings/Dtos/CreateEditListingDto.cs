@@ -18,4 +18,6 @@ public class CreateEditListingDto
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public CoordinateDto Location { get; set; }
     public List<DetailsDto> Details { get; set; }
+    public List<CreateDocumentDto> Images { get; set; } = [];
+    public List<CreateDocumentDto> Videos { get; set; } = [];
 }

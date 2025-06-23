@@ -97,9 +97,9 @@ public class SubmissionService(DatabaseContext _context)
         var changes = new List<SubmissionChange>();
         foreach (var property in properties)
         {
-            Console.WriteLine(
-                $"Processing property: {property.Name} (Type: {property.PropertyType.Name}) {property.PropertyType.IsClass}"
-            );
+            // Console.WriteLine(
+            //     $"Processing property: {property.Name} (Type: {property.PropertyType.Name}) {property.PropertyType.IsClass}"
+            // );
             // if (property.PropertyType)
             // {
             //     var initValue = initData == null ? null : property.GetValue(initData);
@@ -110,7 +110,9 @@ public class SubmissionService(DatabaseContext _context)
             {
                 var initValue = initData == null ? null : property.GetValue(initData);
                 var newValue = newData == null ? null : property.GetValue(newData);
-
+                // Console.WriteLine(
+                //     $"Comparing property: {initValue != newValue} {property.Name} (Init: {JsonSerializer.Serialize(initValue, _jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, _jsonOptions) ?? "null"})"
+                // );
                 if (initValue != newValue)
                 {
                     changes.Add(

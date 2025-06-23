@@ -1,3 +1,5 @@
+using Dallal_Backend_v2.Controllers.Dtos;
+
 namespace Dallal_Backend_v2.Controllers.Profiles.Dtos;
 
 public class UpdateProfileProfileRequest
@@ -5,5 +7,5 @@ public class UpdateProfileProfileRequest
     public string? Email { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? Image { get; set; }
+    public CreateDocumentDto? Image { get; set; }
 }

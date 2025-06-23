@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Controllers.Profiles.Dtos;
+using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.ThirdParty;
@@ -25,7 +26,14 @@ public class ProfileController(DatabaseContext _context, S3 _s3Service) : Dallal
         user.Email = request.Email;
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
-        user.ProfileImage = request.Image;
+        user.ProfileImage =
+            request.Image != null
+                ? new Document(
+                    request.Image.FileName,
+                    request.Image.NameInBucket,
+                    request.Image.PlaceHolderNameInBucket
+                )
+                : null;
         user.PreferredLanguage = Thread.CurrentThread.CurrentCulture.Name;
 
         user.UpdatedAt = DateTime.UtcNow;
@@ -36,7 +44,7 @@ public class ProfileController(DatabaseContext _context, S3 _s3Service) : Dallal
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            Image = user.ProfileImage,
+            Image = await _s3Service.CreateDocumentDto(user.ProfileImage),
             Phone = user.Phone,
             PreferredLanguage = user.PreferredLanguage,
             Roles = user.Roles,

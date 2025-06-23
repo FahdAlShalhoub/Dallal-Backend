@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Services;
@@ -18,7 +19,8 @@ public class AuthController(
     FirebaseTokenVerifier _firebaseTokenVerifier,
     JwtService _jwtService,
     DatabaseContext _context,
-    IConfiguration _configuration
+    IConfiguration _configuration,
+    S3 _s3Service
 ) : DallalController
 {
     [HttpPost("oauth")]
@@ -47,7 +49,7 @@ public class AuthController(
                 validatePassword: false
             );
 
-            return CreateToken(user);
+            return await CreateToken(user);
         }
         catch (FirebaseAuthException)
         {
@@ -73,13 +75,13 @@ public class AuthController(
             .SingleOrDefaultAsync(x => x.Email == email);
 
         // Handle default values for first and last name
-        string firstName = givenName?.Trim();
-        string lastName = familyName?.Trim();
+        string? firstName = givenName?.Trim();
+        string? lastName = familyName?.Trim();
 
-        if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
-        {
-            firstName = email; // Use email as default if no name provided
-        }
+        // if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
+        // {
+        //     // firstName = email; // Use email as default if no name provided
+        // }
 
         if (existingUser is null)
         {
@@ -91,7 +93,7 @@ public class AuthController(
                     password == null ? "oauth-password" : BCrypt.Net.BCrypt.HashPassword(password),
                 FirstName = firstName,
                 LastName = lastName,
-                ProfileImage = image,
+                ProfileImage = image != null ? new Document(image) : null,
                 PreferredLanguage = preferredLanguage,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
@@ -164,7 +166,7 @@ public class AuthController(
         user.LockoutUntil = null;
         await _context.SaveChangesAsync();
 
-        return CreateToken(user);
+        return await CreateToken(user);
     }
 
     [HttpPost("signup")]
@@ -185,7 +187,7 @@ public class AuthController(
                 validatePassword: true
             );
 
-            return CreateToken(user);
+            return await CreateToken(user);
         }
         catch (Exception ex)
             when (ex.Message.Contains("duplicate key value violates unique constraint"))
@@ -207,7 +209,7 @@ public class AuthController(
             .FirstAsync(u => u.Id == userId);
 
         await CreateSubProfile(userType, user);
-        return CreateToken(user);
+        return await CreateToken(user);
     }
 
     [HttpPut("info")]
@@ -235,10 +237,10 @@ public class AuthController(
             user.LastName = request.LastName;
 
         await _context.SaveChangesAsync();
-        return GenerateUserInfoDto(user);
+        return await GenerateUserInfoDto(user);
     }
 
-    private AuthenticatedUserDto CreateToken(User user)
+    private async Task<AuthenticatedUserDto> CreateToken(User user)
     {
         List<Claim> claims =
         [
@@ -260,15 +262,15 @@ public class AuthController(
         return new AuthenticatedUserDto
         {
             AccessToken = _jwtService.GenerateToken(claims),
-            User = GenerateUserInfoDto(user),
+            User = await GenerateUserInfoDto(user),
         };
     }
 
-    private static UserInfoDto GenerateUserInfoDto(User user)
+    private async Task<UserInfoDto> GenerateUserInfoDto(User user)
     {
         return new UserInfoDto
         {
-            Image = user.ProfileImage!,
+            Image = await _s3Service.CreateDocumentDto(user.ProfileImage),
             FirstName = user.FirstName!,
             LastName = user.LastName!,
             Email = user.Email!,

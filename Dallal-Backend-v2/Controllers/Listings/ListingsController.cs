@@ -3,6 +3,7 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers;
+using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("listings")]
-public class ListingsController(DatabaseContext _context) : DallalController
+public class ListingsController(DatabaseContext _context, S3 s3) : DallalController
 {
     [HttpGet("recent")]
     public async Task<GetRecentListingsResponse> GetRecentListings()
@@ -18,20 +19,23 @@ public class ListingsController(DatabaseContext _context) : DallalController
         var query = _context.Listings.AsQueryable();
         query = query.Where(listing => listing.CreatedAt > DateTime.UtcNow.AddDays(-4));
         var count = await query.CountAsync();
-        var listings = await query
+        var listingsQuery = await query
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
-            .Select(ListingMapper.SelectToDto(UserIdOrNull))
+            .Select(ListingMapper.SelectToQueryDto(UserIdOrNull))
             .OrderByDescending(b => b.CreatedAt)
             .Take(5)
             .ToListAsync();
 
+        var listings = await Task.WhenAll(
+            listingsQuery.Select(async listing => await ListingMapper.SelectToDto(listing, s3))
+        );
         return new GetRecentListingsResponse
         {
             RecentListingsCount = count,
-            ListingsList = listings,
+            ListingsList = [.. listings],
         };
     }
 
@@ -74,16 +78,20 @@ public class ListingsController(DatabaseContext _context) : DallalController
             _ => query,
         };
 
-        var listings = await query
+        var listingsQuery = await query
             .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
             .Take(searchParams.PageSize)
-            .Select(ListingMapper.SelectToDto(UserIdOrNull))
+            .Select(ListingMapper.SelectToQueryDto(UserIdOrNull))
             .ToListAsync();
+
+        var listings = await Task.WhenAll(
+            listingsQuery.Select(async listing => await ListingMapper.SelectToDto(listing, s3))
+        );
 
         var count = await query.CountAsync();
 
         return new PaginatedList<ListingDto>(
-            listings,
+            [.. listings],
             searchParams.PageNumber,
             count,
             searchParams.PageSize
@@ -93,14 +101,14 @@ public class ListingsController(DatabaseContext _context) : DallalController
     [HttpGet("{id:guid}", Name = "GetListingDetails")]
     public async Task<ListingDetailedDto> Listings([FromRoute] Guid id)
     {
-        ListingDetailedDto? query = await _context
+        var query = await _context
             .Listings.AsQueryable()
             .Where(listing => listing.Id == id)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
-            .Select(ListingMapper.SelectToDetailDto(UserIdOrNull))
+            .Select(ListingMapper.SelectToDetailQueryDto(UserIdOrNull))
             .FirstOrDefaultAsync();
 
         if (query == null)
@@ -108,7 +116,7 @@ public class ListingsController(DatabaseContext _context) : DallalController
             throw new EntityNotFoundException("Listing not found");
         }
 
-        return query;
+        return await ListingMapper.SelectToDetailedDto(query, s3);
     }
 
     private async Task<IQueryable<Listing>> ConstructFilter(

@@ -8,4 +8,5 @@ public class PaginatedList<T>(List<T> items, int currentPage, int count, int pag
     public int TotalPages { get; } = count > 0 ? (int)Math.Ceiling((double)count / pageSize) : 0;
     public bool HasPreviousPage => CurrentPage > 1;
     public bool HasNextPage => CurrentPage < TotalPages;
+    public int TotalCount { get; } = count;
 }

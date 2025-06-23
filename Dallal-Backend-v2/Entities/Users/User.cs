@@ -11,7 +11,7 @@ public class User
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string Password { get; set; } = default!;
-    public string? ProfileImage { get; set; }
+    public Document? ProfileImage { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

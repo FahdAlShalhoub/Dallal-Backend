@@ -1,7 +1,9 @@
+using Amazon.S3.Model.Internal.MarshallTransformations;
 using Dallal_Backend_v2.Controllers.Brokers.Dtos;
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Controllers.Submissions;
 using Dallal_Backend_v2.Controllers.Submissions.Dtos;
+using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
@@ -12,6 +14,7 @@ using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Schema;
 
 namespace Dallal_Backend_v2.Controllers.Brokers;
 
@@ -41,6 +44,7 @@ public class BrokerProfileController(
             && s.Type == SubmissionType.BrokerAccount
             && s.Status == SubmissionStatus.Pending
         );
+        var s3Url = await _s3Service.CreateDocumentDto(user.ProfileImage);
 
         var userDto = new BrokerDto
         {
@@ -48,7 +52,7 @@ public class BrokerProfileController(
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            ProfileImage = user.ProfileImage,
+            ProfileImage = s3Url,
             Phone = user.Phone,
             AgencyName =
                 submission?.GetExpectedValue<string>(nameof(Broker.AgencyName))
@@ -127,7 +131,14 @@ public class BrokerProfileController(
         user.Email = request.Email;
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
-        user.ProfileImage = request.Image;
+        user.ProfileImage =
+            request.Image != null
+                ? new Document(
+                    request.Image.FileName,
+                    request.Image.NameInBucket,
+                    request.Image.PlaceHolderNameInBucket
+                )
+                : null;
         user.PreferredLanguage = Thread.CurrentThread.CurrentCulture.Name;
 
         user.UpdatedAt = DateTime.UtcNow;
@@ -157,7 +168,20 @@ public class BrokerProfileController(
         }
 
         await _context.SaveChangesAsync();
-        return BrokerMapper.SelectUserToBrokerDto().Compile()(user);
+        return new BrokerDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Phone = user.Phone,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            ProfileImage = await _s3Service.CreateDocumentDto(user.ProfileImage),
+            Status = user.Broker!.Status,
+            AgencyName = user.Broker.AgencyName,
+            CertificateNumber = user.Broker.CertificateNumber,
+            Description = user.Broker.Description,
+        };
+        ;
     }
 
     [HttpPost("documents/upload-documents")]

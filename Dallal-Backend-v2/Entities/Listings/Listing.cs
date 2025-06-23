@@ -54,4 +54,7 @@ public class Listing
 
     [DoNotIncludeInSubmission]
     public List<Buyer> Favorites { get; set; } = [];
+
+    public List<Document> Images { get; set; } = [];
+    public List<Document> Videos { get; set; } = [];
 }

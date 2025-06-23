@@ -1,6 +1,7 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ namespace Dallal_Backend_v2.Controllers;
 [ApiController]
 [Route("listings/favorites")]
 [Authorize(Roles = "Buyer")]
-public class FavoriteListingsController(DatabaseContext _context) : DallalController
+public class FavoriteListingsController(DatabaseContext _context, S3 s3) : DallalController
 {
     [HttpGet]
     public async Task<PaginatedList<ListingDto>> GetFavoriteListings(
@@ -20,19 +21,23 @@ public class FavoriteListingsController(DatabaseContext _context) : DallalContro
     {
         var query = _context.Listings.Where(i => i.Favorites.Any(f => f.Id == UserId));
 
-        var listings = await query
+        var listingsQuery = await query
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
-            .Take(pageSize)
-            .Skip((pageNumber - 1) * pageSize)
             .OrderByDescending(i => i.CreatedAt)
-            .Select(ListingMapper.SelectToDto(UserIdOrNull))
+            .Select(ListingMapper.SelectToQueryDto(UserIdOrNull))
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        var listings = await Task.WhenAll(
+            listingsQuery.Select(async listing => await ListingMapper.SelectToDto(listing, s3))
+        );
         var count = await query.CountAsync();
 
-        return new PaginatedList<ListingDto>(listings, pageNumber, count, pageSize);
+        return new PaginatedList<ListingDto>([.. listings], pageNumber, count, pageSize);
     }
 
     [HttpPost()]

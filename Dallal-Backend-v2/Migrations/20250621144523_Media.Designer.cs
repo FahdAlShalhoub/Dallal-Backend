@@ -6,6 +6,7 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -15,9 +16,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dallal_Backend_v2
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250621144523_Media")]
+    partial class Media
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -159,9 +162,9 @@ namespace Dallal_Backend_v2
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<List<Document>>("Images")
+                    b.PrimitiveCollection<List<string>>("Images")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("text[]");
 
                     b.Property<string>("ListingType")
                         .IsRequired()
@@ -195,9 +198,9 @@ namespace Dallal_Backend_v2
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<List<Document>>("Videos")
+                    b.PrimitiveCollection<List<string>>("Videos")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("text[]");
 
                     b.HasKey("Id");
 
@@ -367,8 +370,8 @@ namespace Dallal_Backend_v2
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Document>("ProfileImage")
-                        .HasColumnType("jsonb");
+                    b.Property<string>("ProfileImage")
+                        .HasColumnType("text");
 
                     b.PrimitiveCollection<int[]>("Roles")
                         .IsRequired()

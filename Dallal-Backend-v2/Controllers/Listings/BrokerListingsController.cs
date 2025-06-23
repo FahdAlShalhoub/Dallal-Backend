@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Controllers.Listings.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Services;
+using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +18,23 @@ namespace Dallal_Backend_v2.Controllers;
 [Authorize(Roles = "Broker")]
 public class BrokerListingsController(
     DatabaseContext _context,
-    SubmissionService _submissionService
+    SubmissionService _submissionService,
+    S3 _s3Service
 ) : DallalController
 {
+    [HttpPost("documents/upload-documents")]
+    public async Task<PresignedUrlDto> UploadDocuments([FromBody] UploadDocumentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FileName))
+            throw new ArgumentException(
+                "File name cannot be null or empty",
+                nameof(request.FileName)
+            );
+
+        var presignedUrl = await _s3Service.GetPresignedUrl(request.FileName, "brokers/" + UserId);
+        return presignedUrl;
+    }
+
     [HttpPost]
     public async Task CreateListing([FromBody] CreateEditListingDto listingDto)
     {
@@ -46,7 +62,22 @@ public class BrokerListingsController(
                         OptionId = detail.OptionId,
                     })
                     .ToList() ?? [],
-            Status = ListingStatus.Pending,
+            Status = ListingStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            Images = listingDto
+                .Images.Select(image => new Document(
+                    image.FileName,
+                    image.NameInBucket,
+                    image.PlaceHolderNameInBucket
+                ))
+                .ToList(),
+            Videos = listingDto
+                .Videos.Select(video => new Document(
+                    video.FileName,
+                    video.NameInBucket,
+                    video.PlaceHolderNameInBucket
+                ))
+                .ToList(),
         };
 
         _context.Listings.Add(listing);
