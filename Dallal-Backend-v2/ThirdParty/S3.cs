@@ -92,17 +92,17 @@ public class S3
         };
     }
 
-    private async Task<string> GetViewUrl(string fileName)
+    private async Task<string> GetViewUrl(string nameInBucket)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+        if (string.IsNullOrWhiteSpace(nameInBucket))
+            throw new ArgumentException("File name cannot be null or empty", nameof(nameInBucket));
 
         return await _client.GetPreSignedURLAsync(
             new GetPreSignedUrlRequest
             {
                 Verb = HttpVerb.GET,
                 BucketName = ContainerName,
-                Key = fileName,
+                Key = nameInBucket,
                 Expires = DateTime.UtcNow.AddDays(1),
             }
         );

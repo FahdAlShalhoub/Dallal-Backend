@@ -192,6 +192,7 @@ public class BrokerListingsController(
             .Listings.AsQueryable()
             .Where(l => l.BrokerId == UserId)
             .Where(l => l.Status == status);
+
         var listings = await query
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -199,11 +200,11 @@ public class BrokerListingsController(
             .Select(ListingMapper.SelectToQueryDto(null))
             .ToListAsync();
 
-        var totalCount = await query.CountAsync(l => l.BrokerId == UserId);
+        var totalCount = await query.CountAsync();
 
         var dtos = await Task.WhenAll(
             listings.Select(l => ListingMapper.SelectToDto(l, _s3Service))
         );
-        return new PaginatedList<ListingDto>([.. dtos], totalCount, page, pageSize);
+        return new PaginatedList<ListingDto>([.. dtos], page, totalCount, pageSize);
     }
 }
