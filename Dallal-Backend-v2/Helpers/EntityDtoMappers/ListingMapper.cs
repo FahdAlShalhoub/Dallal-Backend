@@ -13,8 +13,12 @@ public static class ListingMapper
             Name = listing.Name,
 
             BrokerId = listing.BrokerId,
+
             BrokerName = listing.Broker.User.FirstName + " " + listing.Broker.User.LastName,
             BrokerImage = listing.Broker.User.ProfileImage,
+            BrokerPhoneNumber = listing.Broker.User.Phone,
+            BrokerEmail = listing.Broker.User.Email,
+
             AreaName = listing.Area.Name,
             PricePerYear = listing.PricePerYear,
             PricePerContract = listing.PricePerContract,
@@ -56,6 +60,11 @@ public static class ListingMapper
             {
                 Id = listing.BrokerId,
                 Email = listing.BrokerName,
+                PhoneNumber = listing.BrokerPhoneNumber,
+                Image =
+                    listing.BrokerImage != null
+                        ? await s3.CreateDocumentDto(listing.BrokerImage)
+                        : null,
                 Name = listing.BrokerName,
             },
             Area = new LocalizedStringDto(listing.AreaName),
@@ -101,6 +110,11 @@ public static class ListingMapper
             {
                 Id = listing.BrokerId,
                 Email = listing.BrokerName,
+                PhoneNumber = listing.BrokerPhoneNumber,
+                Image =
+                    listing.BrokerImage != null
+                        ? await s3.CreateDocumentDto(listing.BrokerImage)
+                        : null,
                 Name = listing.BrokerName,
             },
             Area = new LocalizedStringDto(listing.AreaName),
@@ -134,9 +148,13 @@ public static class ListingMapper
             Id = listing.Id,
             Name = listing.Name,
             Description = listing.Description,
+
             BrokerId = listing.BrokerId,
             BrokerName = listing.Broker.User.FirstName + " " + listing.Broker.User.LastName,
             BrokerImage = listing.Broker.User.ProfileImage,
+            BrokerPhoneNumber = listing.Broker.User.Phone,
+            BrokerEmail = listing.Broker.User.Email,
+
             AreaName = listing.Area.Name,
             PricePerYear = listing.PricePerYear,
             PricePerContract = listing.PricePerContract,

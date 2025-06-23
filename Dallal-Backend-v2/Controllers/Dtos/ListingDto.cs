@@ -40,8 +40,10 @@ public class ListingDetailedDto : ListingDto
 public record ListingBrokerDto
 {
     public Guid Id { get; set; }
-    public string Email { get; set; }
-    public string Name { get; set; }
+    public string Name { get; set; } = default!;
+    public string Email { get; set; } = default!;
+    public string? PhoneNumber { get; set; }
+    public DocumentDto? Image { get; set; }
 }
 
 public record CoordinateDto()

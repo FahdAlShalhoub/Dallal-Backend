@@ -10,7 +10,9 @@ public class ListingQueryDto
     public Guid Id { get; set; }
     public Guid BrokerId { get; set; }
     public string BrokerName { get; set; } = default!;
-    public Document BrokerImage { get; set; } = default!;
+    public string? BrokerPhoneNumber { get; set; } = default!;
+    public string? BrokerEmail { get; set; } = default!;
+    public Document? BrokerImage { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
     public Guid AreaId { get; set; }

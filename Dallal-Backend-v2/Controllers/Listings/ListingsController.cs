@@ -101,9 +101,11 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
     [HttpGet("{id:guid}", Name = "GetListingDetails")]
     public async Task<ListingDetailedDto> Listings([FromRoute] Guid id)
     {
+        var userId = UserIdOrNull;
         var query = await _context
             .Listings.AsQueryable()
             .Where(listing => listing.Id == id)
+            .Where(listing => listing.Status == ListingStatus.Active || listing.BrokerId == userId)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)

@@ -188,16 +188,18 @@ public class BrokerListingsController(
         [FromQuery] ListingStatus status = ListingStatus.Active
     )
     {
-        var listings = await _context
-            .Listings.Where(l => l.BrokerId == UserId)
-            .Where(l => l.Status == status)
+        IQueryable<Listing> query = _context
+            .Listings.AsQueryable()
+            .Where(l => l.BrokerId == UserId)
+            .Where(l => l.Status == status);
+        var listings = await query
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ListingMapper.SelectToQueryDto(null))
             .ToListAsync();
 
-        var totalCount = await _context.Listings.CountAsync(l => l.BrokerId == UserId);
+        var totalCount = await query.CountAsync(l => l.BrokerId == UserId);
 
         var dtos = await Task.WhenAll(
             listings.Select(l => ListingMapper.SelectToDto(l, _s3Service))
