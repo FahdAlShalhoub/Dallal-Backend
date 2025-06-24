@@ -39,58 +39,82 @@ public class BrokerListingsController(
     public async Task CreateListing([FromBody] CreateEditListingDto listingDto)
     {
         await ValidateDetails(listingDto.Details, listingDto.PropertyType);
-        var listing = new Listing
-        {
-            Name = listingDto.Name,
-            Description = listingDto.Description,
-            BrokerId = UserId,
-            AreaId = listingDto.AreaId,
-            Currency = listingDto.Currency,
-            PricePerContract = listingDto.PricePerContract,
-            BedroomCount = listingDto.BedroomCount,
-            BathroomCount = listingDto.BathroomCount,
-            AreaInMetersSq = listingDto.AreaInMetersSq,
-            ListingType = listingDto.ListingType,
-            PropertyType = listingDto.PropertyType,
-            RentalContractPeriod = listingDto.RentalContractPeriod,
-            Location = new Point(listingDto.Location.Latitude, listingDto.Location.Longitude),
-            Details =
-                listingDto
-                    .Details?.Select(detail => new ListingDetail
-                    {
-                        DefinitionId = detail.DefinitionId,
-                        OptionId = detail.OptionId,
-                    })
-                    .ToList() ?? [],
-            Status = ListingStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            Images = listingDto
-                .Images.Select(image => new Document(
-                    image.FileName,
-                    image.NameInBucket,
-                    image.PlaceHolderNameInBucket
-                ))
-                .ToList(),
-            Videos = listingDto
-                .Videos.Select(video => new Document(
-                    video.FileName,
-                    video.NameInBucket,
-                    video.PlaceHolderNameInBucket
-                ))
-                .ToList(),
-        };
+        var listing = new Listing() { Id = Guid.NewGuid(), CreatedAt = DateTime.UtcNow };
 
-        _context.Listings.Add(listing);
-        (
-            await _submissionService.UpsertSubmission(
-                SubmissionType.Listing,
-                listing.Id,
-                null,
-                listing
-            )
-        )
-            .Changes.Single(i => i.Field == nameof(Listing.Status))
-            .NewValue = ((int)ListingStatus.Active).ToString();
+        SetData(listingDto, listing);
+        await UpsertSubmission(listing);
+    }
+
+    [HttpPut("{id}")]
+    public async Task UpdateListing(Guid id, [FromBody] CreateEditListingDto listingDto)
+    {
+        var listing = await _context.Listings.FindAsync(id);
+
+        if (listing?.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                $"You do not have permission to update this listing."
+            );
+
+        await ValidateDetails(listingDto.Details, listingDto.PropertyType);
+
+        var newListing = new Listing();
+        newListing.Id = id;
+        newListing.CreatedAt = listing.CreatedAt;
+        SetData(listingDto, newListing);
+        newListing.UpdatedAt = DateTime.UtcNow;
+        await UpsertSubmission(newListing, listing);
+    }
+
+    private void SetData(CreateEditListingDto listingDto, Listing listing)
+    {
+        listing.Name = listingDto.Name;
+        listing.Description = listingDto.Description;
+        listing.BrokerId = UserId;
+        listing.AreaId = listingDto.AreaId;
+        listing.Currency = listingDto.Currency;
+        listing.PricePerContract = listingDto.PricePerContract;
+        listing.BedroomCount = listingDto.BedroomCount;
+        listing.BathroomCount = listingDto.BathroomCount;
+        listing.AreaInMetersSq = listingDto.AreaInMetersSq;
+        listing.ListingType = listingDto.ListingType;
+        listing.PropertyType = listingDto.PropertyType;
+        listing.RentalContractPeriod = listingDto.RentalContractPeriod;
+        listing.Location = new Point(listingDto.Location.Latitude, listingDto.Location.Longitude);
+        listing.Details =
+            listingDto
+                .Details?.Select(detail => new ListingDetail
+                {
+                    DefinitionId = detail.DefinitionId,
+                    OptionId = detail.OptionId,
+                    Value = detail.Value,
+                })
+                .ToList() ?? [];
+        listing.Status = ListingStatus.Active;
+        listing.CreatedAt = DateTime.UtcNow;
+        listing.Images = listingDto
+            .Images.Select(image => new Document(
+                image.FileName,
+                image.NameInBucket,
+                image.PlaceHolderNameInBucket
+            ))
+            .ToList();
+        listing.Videos = listingDto
+            .Videos.Select(video => new Document(
+                video.FileName,
+                video.NameInBucket,
+                video.PlaceHolderNameInBucket
+            ))
+            .ToList();
+    }
+
+    private async Task UpsertSubmission(Listing newListing, Listing? oldListing = null)
+    {
+        await _submissionService.UpsertSubmission(
+            SubmissionType.Listing,
+            newListing.Id,
+            oldListing,
+            newListing
+        );
 
         await _context.SaveChangesAsync();
     }
@@ -185,8 +209,53 @@ public class BrokerListingsController(
     public async Task<PaginatedList<ListingDto>> MyListings(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] ListingStatus status = ListingStatus.Active
+        [FromQuery] QueryListingStatus status = QueryListingStatus.Active
     )
+    {
+        List<QueryDtos.ListingQueryDto> listings;
+        int totalCount;
+        if (
+            status == QueryListingStatus.Active
+            || status == QueryListingStatus.Archived
+            || status == QueryListingStatus.Completed
+        )
+        {
+            (listings, totalCount) = await GetMyListingsFromListings(
+                page,
+                pageSize,
+                status switch
+                {
+                    QueryListingStatus.Active => ListingStatus.Active,
+                    QueryListingStatus.Completed => ListingStatus.Completed,
+                    QueryListingStatus.Archived => ListingStatus.Archived,
+                    _ => throw new ArgumentException("Invalid status"),
+                }
+            );
+        }
+        else
+        {
+            (listings, totalCount) = await GetMyListingsFromSubmissions(
+                page,
+                pageSize,
+                status switch
+                {
+                    QueryListingStatus.Pending => SubmissionStatus.Pending,
+                    QueryListingStatus.Rejected => SubmissionStatus.Rejected,
+                    _ => throw new ArgumentException("Invalid status"),
+                }
+            );
+        }
+
+        var dtos = await Task.WhenAll(
+            listings.Select(l => ListingMapper.SelectToDto(l, _s3Service))
+        );
+        return new PaginatedList<ListingDto>([.. dtos], page, totalCount, pageSize);
+    }
+
+    private async Task<(
+        List<QueryDtos.ListingQueryDto> listings,
+        int totalCount
+    )> GetMyListingsFromListings(int page, int pageSize, ListingStatus status)
     {
         IQueryable<Listing> query = _context
             .Listings.AsQueryable()
@@ -195,16 +264,105 @@ public class BrokerListingsController(
 
         var listings = await query
             .OrderByDescending(l => l.CreatedAt)
+            .Select(ListingMapper.SelectToQueryDto(null))
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(ListingMapper.SelectToQueryDto(null))
             .ToListAsync();
 
         var totalCount = await query.CountAsync();
-
-        var dtos = await Task.WhenAll(
-            listings.Select(l => ListingMapper.SelectToDto(l, _s3Service))
-        );
-        return new PaginatedList<ListingDto>([.. dtos], page, totalCount, pageSize);
+        return (listings, totalCount);
     }
+
+    private async Task<(
+        List<QueryDtos.ListingQueryDto> listings,
+        int totalCount
+    )> GetMyListingsFromSubmissions(int page, int pageSize, SubmissionStatus status)
+    {
+        var query = _context
+            .Submissions.AsQueryable()
+            .Where(s => s.Type == SubmissionType.Listing && s.Status == status);
+
+        var submissions = await query
+            .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var listings = submissions
+            .Select(s => (Listing)SubmissionService.ApplyChanges(s, null))
+            .ToList();
+
+        var areasIds = listings.Select(l => l.AreaId).Distinct();
+        var brokerIds = listings.Select(l => l.BrokerId).Distinct();
+
+        var areas = await _context
+            .Areas.Where(a => areasIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id);
+        var brokers = await _context
+            .Brokers.Where(b => brokerIds.Contains(b.Id))
+            .Include(b => b.User)
+            .ToDictionaryAsync(b => b.Id);
+
+        foreach (var listing in listings)
+        {
+            listing.Area = areas[listing.AreaId];
+            listing.Broker = brokers[listing.BrokerId];
+        }
+
+        var compiled = ListingMapper.SelectToQueryDto(null).Compile();
+
+        var totalCount = await query.CountAsync();
+        return (listings.Select(compiled).ToList(), totalCount);
+    }
+
+    [HttpGet("my-listing/{id}")]
+    public async Task<ListingDetailedDto> GetListing(Guid id)
+    {
+        var existingListing = await _context
+            .Listings.Include(l => l.Area)
+            .Include(l => l.Broker)
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Definition)
+            .Include(l => l.Details)
+            .ThenInclude(d => d.Option)
+            .FirstOrDefaultAsync(l => l.Id == id);
+
+        var submission = await _context.Submissions.FirstAsync(s =>
+            s.Type == SubmissionType.Listing && s.ReferenceId == id
+        );
+
+        var listing = (Listing)SubmissionService.ApplyChanges(submission, existingListing);
+        listing.Broker = await _context
+            .Brokers.Include(b => b.User)
+            .FirstAsync(b => b.Id == listing.BrokerId);
+        listing.Area = await _context.Areas.FirstAsync(a => a.Id == listing.AreaId);
+
+        var definitionIds = listing.Details.Select(d => d.DefinitionId).Distinct().ToList();
+        var definitions = await _context
+            .DetailsDefinitions.Where(d => definitionIds.Contains(d.Id))
+            .Include(d => d.Options)
+            .ToListAsync();
+
+        foreach (var detail in listing.Details)
+        {
+            detail.Definition = definitions.First(d => d.Id == detail.DefinitionId);
+            if (detail.OptionId != null)
+            {
+                detail.Option = detail.Definition.Options!.FirstOrDefault(o =>
+                    o.Id == detail.OptionId
+                );
+            }
+        }
+        var listingQuery = ListingMapper.SelectToDetailQueryDto(null).Compile().Invoke(listing);
+        return await ListingMapper.SelectToDetailedDto(listingQuery, _s3Service);
+    }
+}
+
+public enum QueryListingStatus
+{
+    Pending,
+    Active,
+    Rejected,
+    Completed,
+    Archived,
 }

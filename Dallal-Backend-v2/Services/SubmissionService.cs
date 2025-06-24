@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Helpers;
@@ -137,25 +138,45 @@ public class SubmissionService(DatabaseContext _context)
 
     private async Task ApplyChanges(Submission submission)
     {
-        object reference;
+        object? reference;
 
         if (submission.Type == SubmissionType.BrokerAccount)
             reference = await _context
                 .Set<Broker>()
-                .FirstAsync(i => i.Id == submission.ReferenceId);
+                .FirstOrDefaultAsync(i => i.Id == submission.ReferenceId);
         else if (submission.Type == SubmissionType.Listing)
             reference = await _context
                 .Set<Listing>()
-                .FirstAsync(i => i.Id == submission.ReferenceId);
+                .FirstOrDefaultAsync(i => i.Id == submission.ReferenceId);
         else
             throw new NotImplementedException();
+        reference = ApplyChanges(submission, reference);
+
+        _context.Update(reference);
+    }
+
+    public static object ApplyChanges(Submission submission, object? reference)
+    {
+        reference ??= Activator.CreateInstance(
+            submission.Type switch
+            {
+                SubmissionType.BrokerAccount => typeof(Broker),
+                SubmissionType.Listing => typeof(Listing),
+                _ => throw new NotImplementedException(),
+            }
+        )!;
+
+        // var isNull = (reference == null) ? "null" : "not null";
+        // Console.WriteLine(
+        //     $"Applying changes to reference of type: {reference?.GetType().Name} (ID: {submission.ReferenceId}) {isNull}"
+        // );
 
         foreach (var change in submission.Changes)
         {
             ApplyChange(reference, change);
         }
 
-        _context.Update(reference);
+        return reference;
     }
 
     private static void ApplyChange(object reference, SubmissionChange change)

@@ -16,6 +16,7 @@ public class ListingDto
     public string Description { get; set; } = default!;
     public ListingBrokerDto Broker { get; set; } = default!;
     public LocalizedStringDto Area { get; set; } = default!;
+    public Guid AreaId { get; set; }
     public string Currency { get; set; } = default!;
     public decimal PricePerContract { get; set; }
     public int BedroomCount { get; set; }

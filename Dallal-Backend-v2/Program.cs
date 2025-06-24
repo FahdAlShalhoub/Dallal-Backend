@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.OpenApi;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,7 +27,10 @@ builder
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddSchemaTransformer<FixBrokenReferencesInArraysSchemaTransformer>();
+});
 
 if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 {

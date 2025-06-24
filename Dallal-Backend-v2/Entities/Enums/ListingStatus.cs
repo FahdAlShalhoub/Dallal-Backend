@@ -2,8 +2,8 @@ namespace Dallal_Backend_v2.Entities.Enums;
 
 public enum ListingStatus
 {
-    Pending,
+    // Pending,
     Active,
     Completed,
-    Cancelled,
+    Archived,
 }
