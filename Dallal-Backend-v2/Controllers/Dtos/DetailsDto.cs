@@ -1,3 +1,4 @@
+using Dallal_Backend_v2.Entities.Details;
 using Dallal_Backend_v2.Entities.Enums;
 
 namespace Dallal_Backend_v2.Controllers.Dtos;
@@ -12,6 +13,7 @@ public class DetailsDefinitionDto
     public bool IsHidden { get; set; }
     public bool IsHiddenInSearch { get; set; }
     public List<DetailsDefinitionOptionDto>? Options { get; set; } = new();
+    public DetailDisplayCategory DisplayCategory { get; set; }
 }
 
 public class DetailsDefinitionOptionDto

@@ -39,25 +39,27 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
         };
     }
 
-    [HttpGet(Name = "GetListings")]
+    [HttpPost("GetListings", Name = "GetListings")]
     public async Task<PaginatedList<ListingDto>> Listings(
-        [FromQuery] ListingsSearchDto searchParams
+        int pageNumber = 1,
+        int pageSize = 10,
+        [FromBody] ListingsSearchDto? searchParams = null
     )
     {
         var query = _context.Listings.AsQueryable();
         query = await ConstructFilter(
             query,
-            searchParams.BedroomCount,
-            searchParams.BathroomCount,
-            searchParams.MinPrice,
-            searchParams.MaxPrice,
-            searchParams.MinArea,
-            searchParams.MaxArea,
-            searchParams.PropertyTypes,
-            searchParams.ListingTypes,
-            searchParams.AreaIds,
-            searchParams.RentalContractPeriods,
-            searchParams.Details
+            searchParams?.BedroomCount,
+            searchParams?.BathroomCount,
+            searchParams?.MinPrice,
+            searchParams?.MaxPrice,
+            searchParams?.MinArea,
+            searchParams?.MaxArea,
+            searchParams?.PropertyTypes,
+            searchParams?.ListingTypes,
+            searchParams?.AreaIds,
+            searchParams?.RentalContractPeriods,
+            searchParams?.Details
         );
 
         query = query
@@ -67,7 +69,7 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             .ThenInclude(detail => detail.Option)
             .OrderBy(b => b.Id);
 
-        query = searchParams.SortBy switch
+        query = searchParams?.SortBy switch
         {
             ListingSortBy.Popular => query.OrderByDescending(listing => listing.CreatedAt),
             ListingSortBy.Newest => query.OrderByDescending(listing => listing.CreatedAt),
@@ -75,12 +77,12 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             ListingSortBy.MostExpensive => query.OrderByDescending(listing =>
                 listing.PricePerContract
             ),
-            _ => query,
+            _ => query.OrderByDescending(listing => listing.CreatedAt),
         };
 
         var listingsQuery = await query
-            .Skip((searchParams.PageNumber - 1) * searchParams.PageSize)
-            .Take(searchParams.PageSize)
+            .Skip(((pageNumber) - 1) * (pageSize))
+            .Take(pageSize)
             .Select(ListingMapper.SelectToQueryDto(UserIdOrNull))
             .ToListAsync();
 
@@ -90,12 +92,7 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
         var count = await query.CountAsync();
 
-        return new PaginatedList<ListingDto>(
-            [.. listings],
-            searchParams.PageNumber,
-            count,
-            searchParams.PageSize
-        );
+        return new PaginatedList<ListingDto>([.. listings], pageNumber, count, pageSize);
     }
 
     [HttpGet("{id:guid}", Name = "GetListingDetails")]
@@ -177,29 +174,35 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             return query;
         var leafAreas = await GetLeafAreas(areaIds!);
         var leafAreaIds = leafAreas.Select(area => area.Id).ToList();
+
+        Console.WriteLine(
+            $"Filtering listings by areas: {string.Join(", ", leafAreas.Select(i => i.Name.Values.First()))}"
+        );
         return query.Where(listing => leafAreaIds.Contains(listing.AreaId));
     }
 
     private async Task<List<Area>> GetLeafAreas(List<Guid> areaIds, int depth = 0)
     {
-        const int maxDepth = 5; // Prevent infinite recursion
+        const int maxDepth = 5;
         if (depth > maxDepth)
             throw new Exception("Max depth reached while fetching leaf areas");
+
         var areas = await _context
-            .Areas.Where(area => areaIds!.Contains(area.Id))
+            .Areas.Where(area => areaIds.Contains(area.Id))
             .Include(i => i.Children)
             .ToListAsync();
 
-        var allAreas = areas.ToList(); //clone
-
+        var allAreas = areas.ToList();
         var parentAreas = areas.Where(area => !area.Children.IsNullOrEmpty()).ToList();
-        if (!parentAreas.IsNullOrEmpty())
+
+        if (parentAreas.Any())
         {
             var leafAreasInChildren = await GetLeafAreas(
                 parentAreas.SelectMany(area => area.Children).Select(i => i.Id).ToList(),
                 depth + 1
             );
-            allAreas.AddRange(areas.Where(leafAreasInChildren.Contains));
+            allAreas.AddRange(areas.Where(a => leafAreasInChildren.Any(leaf => leaf.Id == a.Id)));
+            allAreas.AddRange(leafAreasInChildren);
         }
 
         return allAreas.Where(i => i.Children.IsNullOrEmpty()).ToList();
@@ -210,14 +213,13 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
         List<DetailSearchDto>? details
     )
     {
-        var definitions =
-            details != null
-                ? await _context
-                    .DetailsDefinitions.Where(detail =>
-                        details.Any(d => d.DetailDefinitionId == detail.Id)
-                    )
-                    .ToListAsync()
-                : [];
+        if (details.IsNullOrEmpty())
+            return query;
+
+        var definitionIds = details!.Select(d => d.DetailDefinitionId).ToList();
+        var definitions = await _context
+            .DetailsDefinitions.Where(definition => definitionIds.Contains(definition.Id))
+            .ToListAsync();
 
         foreach (var definition in definitions)
         {
@@ -283,8 +285,6 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
 public class ListingsSearchDto
 {
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
     public int? BedroomCount { get; set; }
     public int? BathroomCount { get; set; }
     public int? MinPrice { get; set; }

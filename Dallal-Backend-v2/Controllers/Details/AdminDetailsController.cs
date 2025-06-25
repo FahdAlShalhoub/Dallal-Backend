@@ -168,6 +168,7 @@ public class AdminDetailsController : DallalController
             Type = detailsDefinition.Type,
             IsHidden = detailsDefinition.IsHidden,
             IsHiddenInSearch = detailsDefinition.IsHiddenInSearch,
+            DisplayCategory = detailsDefinition.DisplayCategory,
             PropertyTypes = detailsDefinition.PropertyTypes,
             SearchBehavior = detailsDefinition.SearchBehavior,
             Options = detailsDefinition

@@ -41,6 +41,8 @@ public class DetailsController : DallalController
                         Name = new(o.Name),
                     }),
                 ],
+                DisplayCategory = dd.DisplayCategory,
+                IsHiddenInSearch = dd.IsHiddenInSearch,
             }),
         ];
     }
