@@ -50,18 +50,17 @@ public class BrokerListingsController(
     {
         var listing = await _context.Listings.FindAsync(id);
 
-        if (listing?.BrokerId != UserId)
-            throw new UnauthorizedAccessException(
-                $"You do not have permission to update this listing."
-            );
-
         await ValidateDetails(listingDto.Details, listingDto.PropertyType);
 
         var newListing = new Listing();
         newListing.Id = id;
-        newListing.CreatedAt = listing.CreatedAt;
+        newListing.CreatedAt = listing?.CreatedAt ?? DateTime.UtcNow;
         SetData(listingDto, newListing);
         newListing.UpdatedAt = DateTime.UtcNow;
+        if (newListing.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                $"You do not have permission to update this listing."
+            );
         await UpsertSubmission(newListing, listing);
     }
 

@@ -7,21 +7,24 @@ public class ListingDetailDto
 {
     public ListingDetailDto(ListingDetail listingDetail)
     {
-        Id = listingDetail.Id;
+        DefinitionId = listingDetail.DefinitionId;
         Name = new LocalizedStringDto(listingDetail.Definition.Name);
         DisplayCategory = listingDetail.Definition.DisplayCategory;
+        OptionId = listingDetail.OptionId;
         if (listingDetail.OptionId == null)
-            Value = new LocalizedStringDto(
-                listingDetail.Value ?? throw new Exception("Value is null")
-            );
+            Value = listingDetail.Value;
         else
-            Value = new LocalizedStringDto(
+        {
+            OptionName = new LocalizedStringDto(
                 listingDetail.Option?.Name ?? throw new Exception("Option is null")
             );
+        }
     }
 
-    public Guid Id { get; set; }
+    public Guid DefinitionId { get; set; }
     public LocalizedStringDto Name { get; set; }
-    public LocalizedStringDto Value { get; set; }
+    public string? Value { get; set; }
+    public Guid? OptionId { get; set; }
+    public LocalizedStringDto? OptionName { get; set; }
     public DetailDisplayCategory DisplayCategory { get; set; }
 }
