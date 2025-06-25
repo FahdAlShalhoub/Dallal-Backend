@@ -227,12 +227,16 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             if (definition.Type == DetailDefinitionType.MultiSelect)
                 query = ApplySelectQuery(query, definition, input);
             else if (definition.Type == DetailDefinitionType.Boolean)
+            {
+                var inputValue = input.Values.IsNullOrEmpty() ? null : input.Values![0];
+                if (inputValue == null)
+                    continue; // Skip if no value is provided
                 query = query.Where(listing =>
                     listing.Details.Any(d =>
-                        d.DefinitionId == definition.Id
-                        && bool.Parse(d.Value!) == bool.Parse(input.Values![0])
+                        d.DefinitionId == definition.Id && d.Value.ToLower() == inputValue.ToLower()
                     )
                 );
+            }
             else if (definition.Type == DetailDefinitionType.Number)
                 query = query.Where(listing =>
                     listing.Details.Any(d =>
