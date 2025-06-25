@@ -8,7 +8,8 @@ public sealed class FixBrokenReferencesInArraysSchemaTransformer : IOpenApiSchem
     public Task TransformAsync(
         OpenApiSchema schema,
         OpenApiSchemaTransformerContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         ArgumentNullException.ThrowIfNull(schema);
 
@@ -17,8 +18,8 @@ public sealed class FixBrokenReferencesInArraysSchemaTransformer : IOpenApiSchem
             return Task.CompletedTask;
         }
 
-        var propertiesToFix = schema.Properties
-            .Select(x => x.Value)
+        var propertiesToFix = schema
+            .Properties.Select(x => x.Value)
             .Where(x => x.Type == "array")
             .Where(x => x.Items is not null)
             .Where(x => !string.IsNullOrEmpty(x.Items.Reference?.Id))
