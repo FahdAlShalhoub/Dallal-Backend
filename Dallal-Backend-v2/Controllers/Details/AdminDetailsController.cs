@@ -84,7 +84,7 @@ public class AdminDetailsController : DallalController
 
     private async Task UpdateOptionsAsync(
         DetailsDefinition detailsDefinition,
-        IEnumerable<UpdateDetailsDefinitionOptionDto> incomingOptions
+        List<UpdateDetailsDefinitionOptionDto> incomingOptions
     )
     {
         var incomingOptionIds = incomingOptions
@@ -114,7 +114,7 @@ public class AdminDetailsController : DallalController
 
     private async Task UpdateAndAddOptionsAsync(
         DetailsDefinition detailsDefinition,
-        IEnumerable<UpdateDetailsDefinitionOptionDto> incomingOptions
+        List<UpdateDetailsDefinitionOptionDto> incomingOptions
     )
     {
         foreach (var incomingOption in incomingOptions)

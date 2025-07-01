@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Dallal_Backend_v2.Entities;
 
-public class Document
+public record Document
 {
     [JsonConstructor]
     private Document() { }

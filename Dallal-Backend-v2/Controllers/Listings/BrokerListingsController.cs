@@ -4,6 +4,7 @@ using Dallal_Backend_v2.Controllers.Listings.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
+using Dallal_Backend_v2.Helpers.EntityDtoMappers;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
@@ -25,12 +26,6 @@ public class BrokerListingsController(
     [HttpPost("documents/upload-documents")]
     public async Task<PresignedUrlDto> UploadDocuments([FromBody] UploadDocumentRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.FileName))
-            throw new ArgumentException(
-                "File name cannot be null or empty",
-                nameof(request.FileName)
-            );
-
         var presignedUrl = await _s3Service.GetPresignedUrl(request.FileName, "brokers/" + UserId);
         return presignedUrl;
     }
@@ -48,13 +43,13 @@ public class BrokerListingsController(
     [HttpPut("{id}")]
     public async Task UpdateListing(Guid id, [FromBody] CreateEditListingDto listingDto)
     {
-        var listing = await _context.Listings.FindAsync(id);
+        var listing = await _context.Listings.Include(i => i.Details).FirstAsync(i => i.Id == id);
 
         await ValidateDetails(listingDto.Details, listingDto.PropertyType);
 
         var newListing = new Listing();
         newListing.Id = id;
-        newListing.CreatedAt = listing?.CreatedAt ?? DateTime.UtcNow;
+        newListing.CreatedAt = listing.CreatedAt;
         SetData(listingDto, newListing);
         newListing.UpdatedAt = DateTime.UtcNow;
         if (newListing.BrokerId != UserId)
@@ -83,13 +78,13 @@ public class BrokerListingsController(
             listingDto
                 .Details?.Select(detail => new ListingDetail
                 {
+                    Id = detail.Id ?? Guid.NewGuid(),
                     DefinitionId = detail.DefinitionId,
                     OptionId = detail.OptionId,
                     Value = detail.Value,
                 })
                 .ToList() ?? [];
         listing.Status = ListingStatus.Active;
-        listing.CreatedAt = DateTime.UtcNow;
         listing.Images = listingDto
             .Images.Select(image => new Document(
                 image.FileName,
@@ -178,8 +173,11 @@ public class BrokerListingsController(
 
             if (definition.Type == DetailDefinitionType.Text)
             {
-                if (string.IsNullOrEmpty(inputDetail.Value))
-                    throw new ValidationException($"Value {inputDetail.Value} is not a valid text");
+                // Only validate non-empty text for required fields
+                if (definition.IsRequired && string.IsNullOrEmpty(inputDetail.Value))
+                    throw new ValidationException(
+                        $"Value for required field cannot be null or empty"
+                    );
                 continue;
             }
             if (definition.Type == DetailDefinitionType.Year)
@@ -287,8 +285,15 @@ public class BrokerListingsController(
             .Take(pageSize)
             .ToListAsync();
 
+        var existingListings = await _context
+            .Listings.Where(l => submissions.Select(s => s.ReferenceId).Contains(l.Id))
+            .Include(l => l.Details)
+            .ToDictionaryAsync(i => i.Id);
+
         var listings = submissions
-            .Select(s => (Listing)SubmissionService.ApplyChanges(s, null))
+            .Select(s =>
+                (Listing)SubmissionService.ApplyChanges(s, existingListings[s.ReferenceId])
+            )
             .ToList();
 
         var areasIds = listings.Select(l => l.AreaId).Distinct();
@@ -315,7 +320,7 @@ public class BrokerListingsController(
     }
 
     [HttpGet("my-listing/{id}")]
-    public async Task<ListingDetailedDto> GetListing(Guid id)
+    public async Task<ListingDetailedDto?> GetListing(Guid id)
     {
         var existingListing = await _context
             .Listings.Include(l => l.Area)
@@ -326,34 +331,13 @@ public class BrokerListingsController(
             .ThenInclude(d => d.Option)
             .FirstOrDefaultAsync(l => l.Id == id);
 
-        var submission = await _context.Submissions.FirstAsync(s =>
-            s.Type == SubmissionType.Listing && s.ReferenceId == id
+        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.Type == SubmissionType.Listing
+            && s.ReferenceId == id
+            && s.Status == SubmissionStatus.Pending
         );
 
-        var listing = (Listing)SubmissionService.ApplyChanges(submission, existingListing);
-        listing.Broker = await _context
-            .Brokers.Include(b => b.User)
-            .FirstAsync(b => b.Id == listing.BrokerId);
-        listing.Area = await _context.Areas.FirstAsync(a => a.Id == listing.AreaId);
-
-        var definitionIds = listing.Details.Select(d => d.DefinitionId).Distinct().ToList();
-        var definitions = await _context
-            .DetailsDefinitions.Where(d => definitionIds.Contains(d.Id))
-            .Include(d => d.Options)
-            .ToListAsync();
-
-        foreach (var detail in listing.Details)
-        {
-            detail.Definition = definitions.First(d => d.Id == detail.DefinitionId);
-            if (detail.OptionId != null)
-            {
-                detail.Option = detail.Definition.Options!.FirstOrDefault(o =>
-                    o.Id == detail.OptionId
-                );
-            }
-        }
-        var listingQuery = ListingMapper.SelectToDetailQueryDto(null).Compile().Invoke(listing);
-        return await ListingMapper.SelectToDetailedDto(listingQuery, _s3Service);
+        return await ListingMapper.MapToDto(existingListing, submission, _context, _s3Service);
     }
 }
 

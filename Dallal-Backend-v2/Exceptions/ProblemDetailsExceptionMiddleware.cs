@@ -156,6 +156,13 @@ public class ProblemDetailsExceptionMiddleware
                 "https://tools.ietf.org/html/rfc7231#section-6.5.8"
             ),
 
+            TooManyAttemptsException => (
+                429,
+                "Too Many Requests",
+                "You have made too many requests in a short period of time. Please try again later.",
+                "https://tools.ietf.org/html/rfc6585#section-4"
+            ),
+
             _ => (
                 500,
                 "Internal Server Error",

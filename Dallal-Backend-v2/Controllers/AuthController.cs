@@ -4,6 +4,7 @@ using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
+using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using FirebaseAdmin.Auth;
@@ -146,6 +147,7 @@ public class AuthController(
 
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthenticatedUserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<AuthenticatedUserDto> Login([FromBody] LoginRequest request)
     {
         var user = await _context.Users.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
@@ -155,7 +157,7 @@ public class AuthController(
 
         if (user.LockoutUntil != null && user.LockoutUntil > DateTime.UtcNow)
         {
-            throw new UnauthorizedAccessException(
+            throw new TooManyAttemptsException(
                 $"Account is locked until {user.LockoutUntil.Value}"
             );
         }

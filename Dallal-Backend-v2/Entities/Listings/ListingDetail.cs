@@ -3,9 +3,9 @@ using Dallal_Backend_v2.Entities.Details;
 
 namespace Dallal_Backend_v2.Entities;
 
-public class ListingDetail
+public record ListingDetail
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [JsonIgnore]
     public DetailsDefinition Definition { get; set; } = default!;

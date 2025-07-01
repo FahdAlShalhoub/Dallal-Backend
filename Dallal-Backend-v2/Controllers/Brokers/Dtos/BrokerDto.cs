@@ -15,4 +15,5 @@ public class BrokerDto
     public string? AgencyName { get; set; }
     public string? CertificateNumber { get; set; }
     public string? Description { get; set; }
+    public List<DocumentDto> Documents { get; set; } = new();
 }

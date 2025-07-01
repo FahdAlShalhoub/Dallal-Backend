@@ -41,39 +41,20 @@ public class BrokerProfileController(
             && s.Type == SubmissionType.BrokerAccount
             && s.Status == SubmissionStatus.Pending
         );
-        var s3Url = await _s3Service.CreateDocumentDto(user.ProfileImage);
-
-        var userDto = new BrokerDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            ProfileImage = s3Url,
-            Phone = user.Phone,
-            AgencyName =
-                submission?.GetExpectedValue<string>(nameof(Broker.AgencyName))
-                ?? user.Broker!.AgencyName,
-            CertificateNumber =
-                submission?.GetExpectedValue<string>(nameof(Broker.CertificateNumber))
-                ?? user.Broker!.CertificateNumber,
-            Description =
-                submission?.GetExpectedValue<string>(nameof(Broker.Description))
-                ?? user.Broker!.Description,
-            Status = user.Broker!.Status,
-        };
+        BrokerDto userDto = await BrokerMapper.GetDtoFromSubmission(user, submission, _s3Service);
+        userDto.Status = user.Broker!.Status; //ignore submission status for now
         return userDto;
     }
 
     [HttpGet("submission")]
-    public async Task<SubmissionDto?> GetSubmission()
+    public async Task<SummarySubmissionDto?> GetSubmission()
     {
         var userId = UserId;
-        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
-            s.ReferenceId == userId
-            && s.Type == SubmissionType.BrokerAccount
-            && (s.Status == SubmissionStatus.Rejected)
-        );
+        var submission = await _context
+            .Submissions.OrderByDescending(i => i.CreatedAt)
+            .FirstOrDefaultAsync(s =>
+                s.ReferenceId == userId && s.Type == SubmissionType.BrokerAccount
+            );
         if (submission == null)
             return null;
 
@@ -110,6 +91,8 @@ public class BrokerProfileController(
                     CertificateNumber = user.Broker.CertificateNumber,
                     AgencyName = user.Broker.AgencyName,
                     Description = user.Broker.Description,
+                    Documents = user.Broker.Documents,
+                    User = user,
                 }
             );
         }
@@ -146,6 +129,14 @@ public class BrokerProfileController(
             CertificateNumber = request.CertificateNumber,
             Description = request.Description,
             User = user,
+            Documents =
+                request
+                    .Documents?.Select(doc => new Document(
+                        doc.FileName,
+                        doc.NameInBucket,
+                        doc.PlaceHolderNameInBucket
+                    ))
+                    .ToList() ?? [],
         };
 
         if (newBroker.IsMinimumInfoSet())

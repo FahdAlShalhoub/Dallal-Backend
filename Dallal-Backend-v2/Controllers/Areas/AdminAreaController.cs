@@ -55,6 +55,33 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         };
     }
 
+    [HttpGet("{id}")]
+    public async Task<AreaDto> GetArea(Guid id)
+    {
+        var area = await _context.Areas.Include(a => a.Parent).FirstOrDefaultAsync(a => a.Id == id);
+
+        if (area == null)
+        {
+            throw new EntityNotFoundException($"Area with ID {id} not found");
+        }
+
+        return new AreaDto
+        {
+            Id = area.Id,
+            Name = new LocalizedStringDto(area.Name),
+            Parent =
+                area.Parent != null
+                    ? new AreaDto
+                    {
+                        Id = area.Parent.Id,
+                        Name = new LocalizedStringDto(area.Parent.Name),
+                        CreatedAt = area.Parent.CreatedAt,
+                    }
+                    : null,
+            CreatedAt = area.CreatedAt,
+        };
+    }
+
     // Update an existing area
     [HttpPut("{id}")]
     public async Task<AreaDto> UpdateArea(Guid id, [FromBody] UpdateAreaRequest request)

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using Dallal_Backend_v2.Services;
 
 namespace Dallal_Backend_v2.Entities.Submissions;
 
@@ -14,6 +15,7 @@ public class Submission
     public List<SubmissionChange> Changes { get; set; } = default!;
 
     public Guid ReferenceId { get; set; }
+    public string? ReferenceName { get; set; }
 
     public SubmissionStatus Status { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -28,7 +30,7 @@ public class Submission
         if (change.NewValue == null)
             return default;
 
-        return JsonSerializer.Deserialize<T>(change.NewValue);
+        return JsonSerializer.Deserialize<T>(change.NewValue, SubmissionService.s_jsonOptions);
     }
 }
 

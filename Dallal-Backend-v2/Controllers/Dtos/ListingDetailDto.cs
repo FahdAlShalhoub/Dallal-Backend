@@ -7,6 +7,7 @@ public class ListingDetailDto
 {
     public ListingDetailDto(ListingDetail listingDetail)
     {
+        Id = listingDetail.Id;
         DefinitionId = listingDetail.DefinitionId;
         Name = new LocalizedStringDto(listingDetail.Definition.Name);
         DisplayCategory = listingDetail.Definition.DisplayCategory;
@@ -21,6 +22,7 @@ public class ListingDetailDto
         }
     }
 
+    public Guid Id { get; set; }
     public Guid DefinitionId { get; set; }
     public LocalizedStringDto Name { get; set; }
     public string? Value { get; set; }

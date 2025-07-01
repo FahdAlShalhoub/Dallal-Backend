@@ -9,7 +9,7 @@ public class JwtService(string jwtSecretKey, string issuer)
 {
     private readonly SymmetricSecurityKey _jwtSecretKey = new(Encoding.UTF8.GetBytes(jwtSecretKey));
 
-    public string GenerateToken(IEnumerable<Claim> claims)
+    public string GenerateToken(List<Claim> claims)
     {
         return new JwtSecurityTokenHandler().WriteToken(
             new JwtSecurityToken(

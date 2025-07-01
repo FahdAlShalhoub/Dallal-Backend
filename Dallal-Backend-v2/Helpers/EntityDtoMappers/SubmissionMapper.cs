@@ -6,8 +6,8 @@ namespace Dallal_Backend_v2.Helpers.EntityDtoMappers;
 
 public static class SubmissionMapper
 {
-    public static Expression<Func<Submission, SubmissionDto>> SelectToDto() =>
-        submission => new SubmissionDto
+    public static Expression<Func<Submission, SummarySubmissionDto>> SelectToDto() =>
+        submission => new SummarySubmissionDto
         {
             Id = submission.Id,
             Type = submission.Type,
@@ -17,13 +17,6 @@ public static class SubmissionMapper
             RejectedAt = submission.RejectedAt,
             RejectedReason = submission.RejectedReason,
             ReferenceId = submission.ReferenceId,
-            Changes = submission
-                .Changes.Select(change => new SubmissionChangeDto
-                {
-                    Field = change.Field,
-                    OldValue = change.OldValue,
-                    NewValue = change.NewValue,
-                })
-                .ToList(),
+            ReferenceName = submission.ReferenceName,
         };
 }

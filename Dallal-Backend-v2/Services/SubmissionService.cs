@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 using Dallal_Backend_v2.Entities;
@@ -12,7 +13,7 @@ namespace Dallal_Backend_v2.Services;
 public class SubmissionService(DatabaseContext _context)
 {
     private static readonly Dictionary<Type, PropertyInfo[]> _propertiesCache = [];
-    private static readonly JsonSerializerOptions _jsonOptions = CreateJsonOptions();
+    public static readonly JsonSerializerOptions s_jsonOptions = CreateJsonOptions();
 
     public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
@@ -41,6 +42,13 @@ public class SubmissionService(DatabaseContext _context)
         };
 
         submission.Changes = GetChanges(initData, newData);
+
+        submission.ReferenceName = newData switch
+        {
+            Broker broker => broker.User.FirstName + " " + broker.User.LastName,
+            Listing listing => listing.Name,
+            _ => throw new NotImplementedException($"Unsupported type: {typeof(T).Name}"),
+        };
         if (isNew)
             _context.Submissions.Add(submission);
         else
@@ -75,6 +83,15 @@ public class SubmissionService(DatabaseContext _context)
         submission.ApprovedAt = DateTime.UtcNow;
         _context.Submissions.Update(submission);
         await ApplyChanges(submission);
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
         await _context.SaveChangesAsync();
     }
 
@@ -110,17 +127,32 @@ public class SubmissionService(DatabaseContext _context)
             {
                 var initValue = initData == null ? null : property.GetValue(initData);
                 var newValue = newData == null ? null : property.GetValue(newData);
-                // Console.WriteLine(
-                //     $"Comparing property: {initValue != newValue} {property.Name} (Init: {JsonSerializer.Serialize(initValue, _jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, _jsonOptions) ?? "null"})"
-                // );
-                if (initValue != newValue)
+                bool isDifferent = !Equals(initValue, newValue);
+                if (
+                    isDifferent
+                    && initValue is IList initEnumerable
+                    && newValue is IList newEnumerable
+                )
+                {
+                    Console.WriteLine(
+                        $"Comparing enumerable property: {property.Name} (Init: {JsonSerializer.Serialize(initValue, s_jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, s_jsonOptions) ?? "null"})"
+                    );
+                    isDifferent = !initEnumerable
+                        .Cast<object>()
+                        .SequenceEqual(newEnumerable.Cast<object>());
+                }
+
+                Console.WriteLine(
+                    $"Comparing property: {isDifferent} {initData is IList} {property.Name} (Init: {JsonSerializer.Serialize(initValue, s_jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, s_jsonOptions) ?? "null"})"
+                );
+                if (isDifferent)
                 {
                     changes.Add(
                         new SubmissionChange
                         {
                             Field = prefix + property.Name,
-                            OldValue = JsonSerializer.Serialize(initValue, _jsonOptions),
-                            NewValue = JsonSerializer.Serialize(newValue, _jsonOptions),
+                            OldValue = JsonSerializer.Serialize(initValue, s_jsonOptions),
+                            NewValue = JsonSerializer.Serialize(newValue, s_jsonOptions),
                         }
                     );
                 }
@@ -147,12 +179,32 @@ public class SubmissionService(DatabaseContext _context)
         else if (submission.Type == SubmissionType.Listing)
             reference = await _context
                 .Set<Listing>()
+                .Include(i => i.Details)
                 .FirstOrDefaultAsync(i => i.Id == submission.ReferenceId);
         else
             throw new NotImplementedException();
+        bool isNew = reference == null;
+        Console.WriteLine(
+            $"Applying changes to reference of type: {reference?.GetType().Name} (ID: {submission.ReferenceId}) {(isNew ? "new" : "existing")}"
+        );
+        Console.WriteLine(JsonSerializer.Serialize(reference, s_jsonOptions));
         reference = ApplyChanges(submission, reference);
 
-        _context.Update(reference);
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("===============================================");
+        if (isNew)
+            _context.Add(reference);
+        else if (reference is Broker broker)
+            _context.Set<Broker>().Update(broker);
+        else if (reference is Listing listing)
+            _context.Set<Listing>().Update(listing);
     }
 
     public static object ApplyChanges(Submission submission, object? reference)
@@ -219,7 +271,7 @@ public class SubmissionService(DatabaseContext _context)
         if (change.NewValue != null)
             property.SetValue(
                 reference,
-                JsonSerializer.Deserialize(change.NewValue, property.PropertyType, _jsonOptions)
+                JsonSerializer.Deserialize(change.NewValue, property.PropertyType, s_jsonOptions)
             );
         else
             property.SetValue(reference, null);

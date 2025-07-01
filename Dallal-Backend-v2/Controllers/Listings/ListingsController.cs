@@ -3,9 +3,11 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers;
+using Dallal_Backend_v2.Helpers.EntityDtoMappers;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace Dallal_Backend_v2.Controllers;
 
@@ -59,7 +61,11 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             searchParams?.ListingTypes,
             searchParams?.AreaIds,
             searchParams?.RentalContractPeriods,
-            searchParams?.Details
+            searchParams?.Details,
+            searchParams?.Latitude,
+            searchParams?.Longitude,
+            searchParams?.DeltaLatitude,
+            searchParams?.DeltaLongitude
         );
 
         query = query
@@ -130,12 +136,17 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
         List<ListingType>? listingTypes,
         List<Guid>? areaIds,
         List<RentalContractPeriod>? rentalContractPeriods,
-        List<DetailSearchDto>? details
+        List<DetailSearchDto>? details,
+        double? latitude,
+        double? longitude,
+        double? deltaLatitude,
+        double? deltaLongitude
     )
     {
         query = query.Where(listing => listing.Status == ListingStatus.Active);
         query = await FilterDetails(query, details);
         query = await FilterAreas(query, areaIds);
+        query = FilterByCoordinates(query, latitude, longitude, deltaLatitude, deltaLongitude);
         query = query.WhereIf(
             bedroomCount != null,
             listing => listing.BedroomCount == bedroomCount
@@ -262,6 +273,8 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
         DetailSearchDto input
     )
     {
+        if (input.Options.IsNullOrEmpty())
+            return query;
         if (definition.SearchBehavior == DetailDefinitionSearchBehavior.And)
         {
             foreach (var selectedInput in input.Options!)
@@ -285,6 +298,42 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
         return query;
     }
+
+    private static IQueryable<Listing> FilterByCoordinates(
+        IQueryable<Listing> query,
+        double? latitude,
+        double? longitude,
+        double? deltaLatitude,
+        double? deltaLongitude
+    )
+    {
+        if (
+            latitude == null
+            || longitude == null
+            || deltaLatitude == null
+            || deltaLongitude == null
+        )
+            return query;
+
+        var minLatitude = latitude.Value - deltaLatitude.Value;
+        var maxLatitude = latitude.Value + deltaLatitude.Value;
+        var minLongitude = longitude.Value - deltaLongitude.Value;
+        var maxLongitude = longitude.Value + deltaLongitude.Value;
+
+        var factory = new GeometryFactory(new PrecisionModel(), 4326);
+        var boundingBox = factory.CreatePolygon(
+            new[]
+            {
+                new Coordinate(minLongitude, minLatitude),
+                new Coordinate(maxLongitude, minLatitude),
+                new Coordinate(maxLongitude, maxLatitude),
+                new Coordinate(minLongitude, maxLatitude),
+                new Coordinate(minLongitude, minLatitude),
+            }
+        );
+
+        return query.Where(listing => boundingBox.Contains(listing.Location));
+    }
 }
 
 public class ListingsSearchDto
@@ -301,6 +350,10 @@ public class ListingsSearchDto
     public List<RentalContractPeriod>? RentalContractPeriods { get; set; }
     public List<DetailSearchDto>? Details { get; set; }
     public ListingSortBy? SortBy { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public double? DeltaLatitude { get; set; }
+    public double? DeltaLongitude { get; set; }
 }
 
 public class DetailSearchDto

@@ -1,8 +1,14 @@
 using System.Linq.Expressions;
 using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Listings.Dtos;
 using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.QueryDtos;
+using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
+using Microsoft.EntityFrameworkCore;
+
+namespace Dallal_Backend_v2.Helpers.EntityDtoMappers;
 
 public static class ListingMapper
 {
@@ -178,4 +184,43 @@ public static class ListingMapper
                 userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
             Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
         };
+
+    public static async Task<ListingDetailedDto?> MapToDto(
+        Listing? existingListing,
+        Submission? submission,
+        DatabaseContext context,
+        S3 s3Service
+    )
+    {
+        var listing =
+            submission != null
+                ? (Listing)SubmissionService.ApplyChanges(submission, existingListing)
+                : existingListing;
+        if (listing == null)
+            return null;
+
+        listing.Broker = await context
+            .Brokers.Include(b => b.User)
+            .FirstAsync(b => b.Id == listing.BrokerId);
+        listing.Area = await context.Areas.FirstAsync(a => a.Id == listing.AreaId);
+
+        var definitionIds = listing.Details.Select(d => d.DefinitionId).Distinct().ToList();
+        var definitions = await context
+            .DetailsDefinitions.Where(d => definitionIds.Contains(d.Id))
+            .Include(d => d.Options)
+            .ToListAsync();
+
+        foreach (var detail in listing.Details)
+        {
+            detail.Definition = definitions.First(d => d.Id == detail.DefinitionId);
+            if (detail.OptionId != null)
+            {
+                detail.Option = detail.Definition.Options!.FirstOrDefault(o =>
+                    o.Id == detail.OptionId
+                );
+            }
+        }
+        var listingQuery = SelectToDetailQueryDto(null).Compile().Invoke(listing);
+        return await SelectToDetailedDto(listingQuery, s3Service);
+    }
 }

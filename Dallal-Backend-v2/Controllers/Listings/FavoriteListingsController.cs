@@ -1,6 +1,7 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Helpers.EntityDtoMappers;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
