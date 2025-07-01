@@ -1,6 +1,8 @@
 using Dallal_Backend_v2.Controllers.Dtos;
 using Dallal_Backend_v2.Controllers.Submissions.Dtos;
+using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
+using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers;
 using Dallal_Backend_v2.Helpers.EntityDtoMappers;
@@ -57,8 +59,51 @@ public class AdminSubmissionController(
         if (submission == null)
             throw new EntityNotFoundException(typeof(Submission), id);
 
-        object? oldData = await GetOldData(submission);
-        object? newData = await GetNewData(submission);
+        object? oldDataDto = submission.Type switch
+        {
+            SubmissionType.BrokerAccount => await BrokerMapper.GetDtoFromSubmission(
+                await _context
+                    .Users.Where(u => u.Id == UserId && u.Broker != null)
+                    .Include(u => u.Broker)
+                    .FirstAsync(),
+                submission.GetOldValue<Broker>(),
+                _s3Service
+            ),
+            SubmissionType.Listing => await ListingMapper.MapToDto(
+                submission.GetOldValue<Listing>(),
+                _context,
+                _s3Service
+            ),
+            _ => throw new NotImplementedException(),
+        };
+
+        object? newDataDto = submission.Type switch
+        {
+            SubmissionType.BrokerAccount => await BrokerMapper.GetDtoFromSubmission(
+                await _context
+                    .Users.Where(u => u.Id == UserId && u.Broker != null)
+                    .Include(u => u.Broker)
+                    .FirstAsync(),
+                submission.GetNewValue<Broker>(),
+                _s3Service
+            ),
+            SubmissionType.Listing => await ListingMapper.MapToDto(
+                submission.GetNewValue<Listing>(),
+                _context,
+                _s3Service
+            ),
+            _ => throw new NotImplementedException(),
+        };
+
+        var submissionChangeDtos = submission
+            .CalculateChanges(oldDataDto, newDataDto)
+            .Select(c => new SubmissionChangeDto
+            {
+                Field = c.Field,
+                OldValue = c.OldValue,
+                NewValue = c.NewValue,
+            })
+            .ToList();
 
         return new DetailedSubmissionDto
         {
@@ -71,44 +116,10 @@ public class AdminSubmissionController(
             ApprovedAt = submission.ApprovedAt,
             RejectedAt = submission.RejectedAt,
             RejectedReason = submission.RejectedReason,
-            Changes = submission
-                .GetChanges<object>()
-                .Select(c => new SubmissionChangeDto
-                {
-                    Field = c.Field,
-                    OldValue = c.OldValue,
-                    NewValue = c.NewValue,
-                })
-                .ToList(),
-            OldValue = oldData,
-            NewValue = newData,
+            Changes = submissionChangeDtos,
+            OldValue = oldDataDto,
+            NewValue = newDataDto,
         };
-    }
-
-    private async Task<object?> GetOldData(Submission submission)
-    {
-        if (submission.Type == SubmissionType.BrokerAccount)
-        {
-            return submission.GetOldValue<object>();
-        }
-        if (submission.Type == SubmissionType.Listing)
-        {
-            return submission.GetOldValue<object>();
-        }
-        throw new NotImplementedException();
-    }
-
-    private async Task<object?> GetNewData(Submission submission)
-    {
-        if (submission.Type == SubmissionType.BrokerAccount)
-        {
-            return submission.GetNewValue<object>();
-        }
-        if (submission.Type == SubmissionType.Listing)
-        {
-            return submission.GetNewValue<object>();
-        }
-        throw new NotImplementedException();
     }
 
     [HttpPost("{id}/approve")]

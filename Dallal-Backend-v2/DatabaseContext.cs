@@ -50,6 +50,7 @@ public class DatabaseContext : DbContext
         {
             listing.HasIndex(e => e.CreatedAt).IsDescending();
             listing.Property(e => e.Location).HasColumnType("geometry (point)").IsRequired();
+            listing.Navigation(i => i.Details).AutoInclude();
         });
 
         modelBuilder.Entity<User>(user =>

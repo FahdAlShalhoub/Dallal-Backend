@@ -12,6 +12,8 @@ public class Listing
 {
     public Guid Id { get; set; }
     public Guid BrokerId { get; set; }
+
+    [DoNotIncludeInSubmission]
     public Broker Broker { get; set; }
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;

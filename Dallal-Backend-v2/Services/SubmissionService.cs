@@ -1,20 +1,13 @@
-using System.Collections;
-using System.Reflection;
 using System.Text.Json;
 using Dallal_Backend_v2.Entities;
-using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
-using Dallal_Backend_v2.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Services;
 
 public class SubmissionService(DatabaseContext _context)
 {
-    private static readonly Dictionary<Type, PropertyInfo[]> _propertiesCache = [];
-    public static readonly JsonSerializerOptions s_jsonOptions = CreateJsonOptions();
-
     public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
         Guid referenceId,
@@ -41,8 +34,8 @@ public class SubmissionService(DatabaseContext _context)
             Status = SubmissionStatus.Pending,
         };
 
-        submission.OldData = initData != null ? JsonSerializer.Serialize(initData, s_jsonOptions) : null;
-        submission.NewData = JsonSerializer.Serialize(newData, s_jsonOptions);
+        submission.SetOldValue(initData);
+        submission.SetNewValue(newData);
 
         submission.ReferenceName = newData switch
         {
@@ -84,131 +77,60 @@ public class SubmissionService(DatabaseContext _context)
         submission.ApprovedAt = DateTime.UtcNow;
         _context.Submissions.Update(submission);
         await ApplyChanges(submission);
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
         await _context.SaveChangesAsync();
-    }
-
-
-    private static JsonSerializerOptions CreateJsonOptions()
-    {
-        var _jsonOptions = new JsonSerializerOptions();
-        _jsonOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
-        return _jsonOptions;
     }
 
     private async Task ApplyChanges(Submission submission)
     {
-        object? reference;
-
         if (submission.Type == SubmissionType.BrokerAccount)
-            reference = await _context
-                .Set<Broker>()
-                .FirstOrDefaultAsync(i => i.Id == submission.ReferenceId);
+            await ApplyChangesAndInsertInDb<Broker>(submission);
         else if (submission.Type == SubmissionType.Listing)
-            reference = await _context
-                .Set<Listing>()
-                .Include(i => i.Details)
-                .FirstOrDefaultAsync(i => i.Id == submission.ReferenceId);
+            await ApplyChangesAndInsertInDb<Listing>(submission);
         else
-            throw new NotImplementedException();
-        bool isNew = reference == null;
-        Console.WriteLine(
-            $"Applying changes to reference of type: {reference?.GetType().Name} (ID: {submission.ReferenceId}) {(isNew ? "new" : "existing")}"
-        );
-        Console.WriteLine(JsonSerializer.Serialize(reference, s_jsonOptions));
-        reference = ApplyChanges(submission, reference);
-
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine(_context.ChangeTracker.DebugView.LongView);
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("===============================================");
-        if (isNew)
-            _context.Add(reference);
-        else if (reference is Broker broker)
-            _context.Set<Broker>().Update(broker);
-        else if (reference is Listing listing)
-            _context.Set<Listing>().Update(listing);
+            throw new NotImplementedException($"Unsupported submission type: {submission.Type}");
     }
 
-    public static object ApplyChanges(Submission submission, object? reference)
+    private async Task ApplyChangesAndInsertInDb<T>(Submission submission)
+        where T : class
     {
-        reference ??= Activator.CreateInstance(
-            submission.Type switch
-            {
-                SubmissionType.BrokerAccount => typeof(Broker),
-                SubmissionType.Listing => typeof(Listing),
-                _ => throw new NotImplementedException(),
-            }
-        )!;
+        T? reference = await _context.Set<T>().FindAsync(submission.ReferenceId);
+        bool isNew = reference == null;
+        reference = ApplyChanges<T>(submission, reference);
+        if (isNew)
+            _context.Set<T>().Add(reference);
+        else
+            _context.Set<T>().Update(reference);
+    }
 
-        // var isNull = (reference == null) ? "null" : "not null";
-        // Console.WriteLine(
-        //     $"Applying changes to reference of type: {reference?.GetType().Name} (ID: {submission.ReferenceId}) {isNull}"
-        // );
+    public static T ApplyChanges<T>(Submission submission, T? reference)
+        where T : class
+    {
+        reference ??= Activator.CreateInstance<T>();
 
-        var changes = submission.GetChanges<object>();
+        var changes = submission.GetChanges<T>();
         foreach (var change in changes)
-        {
             ApplyChange(reference, change);
-        }
 
         return reference;
     }
 
-    private static void ApplyChange(object reference, SubmissionChange change)
+    private static void ApplyChange<T>(T reference, SubmissionChange change)
+        where T : class
     {
-        if (change.Field.Contains("."))
-        {
-            var firstPart = change.Field.Split('.')[0];
-            var subProperty =
-                reference.GetType().GetProperty(firstPart)
-                ?? throw new InvalidOperationException(
-                    $"Property '{firstPart}' not found on type '{reference.GetType().Name}'."
-                );
-            var subReference =
-                subProperty.GetValue(reference)
-                ?? throw new InvalidOperationException(
-                    $"Property '{firstPart}' is null on type '{reference.GetType().Name}'."
-                );
-            ApplyChange(
-                subReference,
-                new SubmissionChange
-                {
-                    Field = change.Field.Substring(firstPart.Length + 1),
-                    OldValue = change.OldValue,
-                    NewValue = change.NewValue,
-                }
-            );
-            return;
-        }
         var property =
             reference.GetType().GetProperty(change.Field)
             ?? throw new InvalidOperationException(
                 $"Property '{change.Field}' not found on type '{reference.GetType().Name}'."
             );
-        Console.WriteLine(
-            $"Applying change to property: {property.Name} (Type: {property.PropertyType.Name})"
-        );
-        Console.WriteLine(
-            $"Old Value: {change.OldValue ?? "null"}, New Value: {change.NewValue ?? "null"}"
-        );
+
         if (change.NewValue != null)
             property.SetValue(
                 reference,
-                JsonSerializer.Deserialize(change.NewValue, property.PropertyType, s_jsonOptions)
+                JsonSerializer.Deserialize(
+                    change.NewValue,
+                    property.PropertyType,
+                    Submission.s_jsonOptions
+                )
             );
         else
             property.SetValue(reference, null);

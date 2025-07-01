@@ -187,12 +187,11 @@ public static class ListingMapper
 
     public static async Task<ListingDetailedDto?> MapToDto(
         Listing? existingListing,
-        Submission? submission,
         DatabaseContext context,
         S3 s3Service
     )
     {
-        var listing = submission?.GetNewValue<Listing>() ?? existingListing;
+        var listing = existingListing;
         if (listing == null)
             return null;
 

@@ -41,7 +41,11 @@ public class BrokerProfileController(
             && s.Type == SubmissionType.BrokerAccount
             && s.Status == SubmissionStatus.Pending
         );
-        BrokerDto userDto = await BrokerMapper.GetDtoFromSubmission(user, submission, _s3Service);
+        BrokerDto userDto = await BrokerMapper.GetDtoFromSubmission(
+            user,
+            submission?.GetNewValue<Broker>(),
+            _s3Service
+        );
         userDto.Status = user.Broker!.Status; //ignore submission status for now
         return userDto;
     }

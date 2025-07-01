@@ -322,14 +322,7 @@ public class BrokerListingsController(
     [HttpGet("my-listing/{id}")]
     public async Task<ListingDetailedDto?> GetListing(Guid id)
     {
-        var existingListing = await _context
-            .Listings.Include(l => l.Area)
-            .Include(l => l.Broker)
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Definition)
-            .Include(l => l.Details)
-            .ThenInclude(d => d.Option)
-            .FirstOrDefaultAsync(l => l.Id == id);
+        var existingListing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
 
         var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
             s.Type == SubmissionType.Listing
@@ -337,7 +330,18 @@ public class BrokerListingsController(
             && s.Status == SubmissionStatus.Pending
         );
 
-        return await ListingMapper.MapToDto(existingListing, submission, _context, _s3Service);
+        var dto = await ListingMapper.MapToDto(
+            submission?.GetNewValue<Listing>() ?? existingListing,
+            _context,
+            _s3Service
+        );
+        if (dto!.Broker.Id != UserId)
+        {
+            throw new UnauthorizedAccessException(
+                $"You do not have permission to view this listing."
+            );
+        }
+        return dto;
     }
 }
 
