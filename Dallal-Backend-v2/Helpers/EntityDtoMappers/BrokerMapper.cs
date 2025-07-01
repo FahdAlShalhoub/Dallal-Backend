@@ -18,8 +18,9 @@ public static class BrokerMapper
     {
         var s3Url = await s3Service.CreateDocumentDto(user.ProfileImage);
 
+        var submissionBroker = submission?.GetNewValue<Broker>();
         var documents = (
-            submission?.GetExpectedValue<List<Document>>(nameof(Broker.Documents))
+            submissionBroker?.Documents
             ?? user.Broker!.Documents
             ?? []
         );
@@ -35,17 +36,17 @@ public static class BrokerMapper
             ProfileImage = s3Url,
             Phone = user.Phone,
             AgencyName =
-                submission?.GetExpectedValue<string>(nameof(Broker.AgencyName))
+                submissionBroker?.AgencyName
                 ?? user.Broker!.AgencyName,
             CertificateNumber =
-                submission?.GetExpectedValue<string>(nameof(Broker.CertificateNumber))
+                submissionBroker?.CertificateNumber
                 ?? user.Broker!.CertificateNumber,
             Description =
-                submission?.GetExpectedValue<string>(nameof(Broker.Description))
+                submissionBroker?.Description
                 ?? user.Broker!.Description,
             Documents = documentDtos!,
             Status =
-                submission?.GetExpectedValue<BrokerStatus>(nameof(Broker.Status))
+                submissionBroker?.Status
                 ?? user.Broker!.Status,
         };
         return userDto;

@@ -18,10 +18,10 @@ public class SubmissionService(DatabaseContext _context)
     public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
         Guid referenceId,
-        T initData,
+        T? initData,
         T newData
     )
-        where T : class?
+        where T : class
     {
         var submission = await _context
             .Submissions.Where(s =>
@@ -41,7 +41,8 @@ public class SubmissionService(DatabaseContext _context)
             Status = SubmissionStatus.Pending,
         };
 
-        submission.Changes = GetChanges(initData, newData);
+        submission.OldData = initData != null ? JsonSerializer.Serialize(initData, s_jsonOptions) : null;
+        submission.NewData = JsonSerializer.Serialize(newData, s_jsonOptions);
 
         submission.ReferenceName = newData switch
         {
@@ -95,71 +96,6 @@ public class SubmissionService(DatabaseContext _context)
         await _context.SaveChangesAsync();
     }
 
-    private static List<SubmissionChange> GetChanges<T>(T? initData, T? newData, string prefix = "")
-        where T : class?
-    {
-        if (!_propertiesCache.TryGetValue(typeof(T), out var properties))
-        {
-            properties = typeof(T)
-                .GetProperties(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy
-                )
-                .Where(p =>
-                    !p.GetCustomAttributes(typeof(DoNotIncludeInSubmissionAttribute), false).Any()
-                )
-                .ToArray();
-            _propertiesCache[typeof(T)] = properties;
-        }
-
-        var changes = new List<SubmissionChange>();
-        foreach (var property in properties)
-        {
-            // Console.WriteLine(
-            //     $"Processing property: {property.Name} (Type: {property.PropertyType.Name}) {property.PropertyType.IsClass}"
-            // );
-            // if (property.PropertyType)
-            // {
-            //     var initValue = initData == null ? null : property.GetValue(initData);
-            //     var newValue = newData == null ? null : property.GetValue(newData);
-            //     changes.AddRange(GetChanges(initValue, newValue, prefix + property.Name + "."));
-            // }
-            // else
-            {
-                var initValue = initData == null ? null : property.GetValue(initData);
-                var newValue = newData == null ? null : property.GetValue(newData);
-                bool isDifferent = !Equals(initValue, newValue);
-                if (
-                    isDifferent
-                    && initValue is IList initEnumerable
-                    && newValue is IList newEnumerable
-                )
-                {
-                    Console.WriteLine(
-                        $"Comparing enumerable property: {property.Name} (Init: {JsonSerializer.Serialize(initValue, s_jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, s_jsonOptions) ?? "null"})"
-                    );
-                    isDifferent = !initEnumerable
-                        .Cast<object>()
-                        .SequenceEqual(newEnumerable.Cast<object>());
-                }
-
-                Console.WriteLine(
-                    $"Comparing property: {isDifferent} {initData is IList} {property.Name} (Init: {JsonSerializer.Serialize(initValue, s_jsonOptions) ?? "null"}, New: {JsonSerializer.Serialize(newValue, s_jsonOptions) ?? "null"})"
-                );
-                if (isDifferent)
-                {
-                    changes.Add(
-                        new SubmissionChange
-                        {
-                            Field = prefix + property.Name,
-                            OldValue = JsonSerializer.Serialize(initValue, s_jsonOptions),
-                            NewValue = JsonSerializer.Serialize(newValue, s_jsonOptions),
-                        }
-                    );
-                }
-            }
-        }
-        return changes;
-    }
 
     private static JsonSerializerOptions CreateJsonOptions()
     {
@@ -223,7 +159,8 @@ public class SubmissionService(DatabaseContext _context)
         //     $"Applying changes to reference of type: {reference?.GetType().Name} (ID: {submission.ReferenceId}) {isNull}"
         // );
 
-        foreach (var change in submission.Changes)
+        var changes = submission.GetChanges<object>();
+        foreach (var change in changes)
         {
             ApplyChange(reference, change);
         }

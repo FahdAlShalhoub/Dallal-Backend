@@ -72,7 +72,8 @@ public class AdminSubmissionController(
             RejectedAt = submission.RejectedAt,
             RejectedReason = submission.RejectedReason,
             Changes = submission
-                .Changes.Select(c => new SubmissionChangeDto
+                .GetChanges<object>()
+                .Select(c => new SubmissionChangeDto
                 {
                     Field = c.Field,
                     OldValue = c.OldValue,
@@ -88,25 +89,11 @@ public class AdminSubmissionController(
     {
         if (submission.Type == SubmissionType.BrokerAccount)
         {
-            var user = await _context
-                .Users.Where(u => u.Id == submission.ReferenceId)
-                .Include(u => u.Broker)
-                .FirstAsync();
-
-            return await BrokerMapper.GetDtoFromSubmission(user, null, _s3Service);
+            return submission.GetOldValue<object>();
         }
         if (submission.Type == SubmissionType.Listing)
         {
-            var existingListing = await _context
-                .Listings.Include(l => l.Details)
-                .FirstOrDefaultAsync(l => l.Id == submission.ReferenceId);
-
-            return await ListingMapper.MapToDto(
-                await _context.Listings.FirstOrDefaultAsync(l => l.Id == submission.ReferenceId),
-                null,
-                _context,
-                _s3Service
-            );
+            return submission.GetOldValue<object>();
         }
         throw new NotImplementedException();
     }
@@ -115,25 +102,11 @@ public class AdminSubmissionController(
     {
         if (submission.Type == SubmissionType.BrokerAccount)
         {
-            var user = await _context
-                .Users.Where(u => u.Id == submission.ReferenceId)
-                .Include(u => u.Broker)
-                .FirstAsync();
-
-            return await BrokerMapper.GetDtoFromSubmission(user, submission, _s3Service);
+            return submission.GetNewValue<object>();
         }
         if (submission.Type == SubmissionType.Listing)
         {
-            var existingListing = await _context
-                .Listings.Include(l => l.Details)
-                .FirstOrDefaultAsync(l => l.Id == submission.ReferenceId);
-
-            return await ListingMapper.MapToDto(
-                await _context.Listings.FirstOrDefaultAsync(l => l.Id == submission.ReferenceId),
-                submission,
-                _context,
-                _s3Service
-            );
+            return submission.GetNewValue<object>();
         }
         throw new NotImplementedException();
     }

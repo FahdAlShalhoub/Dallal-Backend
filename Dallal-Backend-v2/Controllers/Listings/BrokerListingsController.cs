@@ -291,9 +291,9 @@ public class BrokerListingsController(
             .ToDictionaryAsync(i => i.Id);
 
         var listings = submissions
-            .Select(s =>
-                (Listing)SubmissionService.ApplyChanges(s, existingListings[s.ReferenceId])
-            )
+            .Select(s => s.GetNewValue<Listing>())
+            .Where(l => l != null)
+            .Cast<Listing>()
             .ToList();
 
         var areasIds = listings.Select(l => l.AreaId).Distinct();

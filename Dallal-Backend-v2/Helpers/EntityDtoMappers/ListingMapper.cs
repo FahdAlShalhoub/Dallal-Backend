@@ -192,10 +192,7 @@ public static class ListingMapper
         S3 s3Service
     )
     {
-        var listing =
-            submission != null
-                ? (Listing)SubmissionService.ApplyChanges(submission, existingListing)
-                : existingListing;
+        var listing = submission?.GetNewValue<Listing>() ?? existingListing;
         if (listing == null)
             return null;
 
