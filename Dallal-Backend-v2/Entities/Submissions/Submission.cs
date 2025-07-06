@@ -205,6 +205,7 @@ public enum SubmissionStatus
     Pending,
     Approved,
     Rejected,
+    Cancelled,
 }
 
 public enum SubmissionType

@@ -65,6 +65,24 @@ public class SubmissionService(DatabaseContext _context)
         await _context.SaveChangesAsync();
     }
 
+    public async Task CancelSubmission(Guid id)
+    {
+        var submission = await _context.Submissions.FindAsync(id);
+        if (submission == null)
+        {
+            throw new KeyNotFoundException($"Submission with ID {id} not found.");
+        }
+
+        if (submission.Status != SubmissionStatus.Pending)
+        {
+            throw new InvalidOperationException("Only pending submissions can be cancelled.");
+        }
+
+        submission.Status = SubmissionStatus.Cancelled;
+        _context.Submissions.Update(submission);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task ApproveSubmission(Guid id)
     {
         var submission = await _context.Submissions.FindAsync(id);

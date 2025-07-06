@@ -315,21 +315,24 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
         )
             return query;
 
-        var minLatitude = latitude.Value - deltaLatitude.Value;
-        var maxLatitude = latitude.Value + deltaLatitude.Value;
-        var minLongitude = longitude.Value - deltaLongitude.Value;
-        var maxLongitude = longitude.Value + deltaLongitude.Value;
+        var minLatitude = latitude.Value - deltaLatitude.Value / 2;
+        var maxLatitude = latitude.Value + deltaLatitude.Value / 2;
+        var minLongitude = longitude.Value - deltaLongitude.Value / 2;
+        var maxLongitude = longitude.Value + deltaLongitude.Value / 2;
 
         var factory = new GeometryFactory(new PrecisionModel(), 4326);
-        var boundingBox = factory.CreatePolygon(
-            new[]
-            {
-                new Coordinate(minLongitude, minLatitude),
-                new Coordinate(maxLongitude, minLatitude),
-                new Coordinate(maxLongitude, maxLatitude),
-                new Coordinate(minLongitude, maxLatitude),
-                new Coordinate(minLongitude, minLatitude),
-            }
+
+        Console.WriteLine(
+            $"Filtering listings by coordinates: ({minLatitude}, {minLongitude}) to ({maxLatitude}, {maxLongitude})"
+        );
+        Polygon boundingBox = factory.CreatePolygon(
+            [
+                new Coordinate(minLatitude, minLongitude),
+                new Coordinate(maxLatitude, minLongitude),
+                new Coordinate(maxLatitude, maxLongitude),
+                new Coordinate(minLatitude, maxLongitude),
+                new Coordinate(minLatitude, minLongitude),
+            ]
         );
 
         return query.Where(listing => boundingBox.Contains(listing.Location));

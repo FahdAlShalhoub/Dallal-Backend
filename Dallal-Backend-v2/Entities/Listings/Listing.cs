@@ -33,7 +33,7 @@ public class Listing
 
     [Column(TypeName = "geometry (point)")]
     [JsonConverter(typeof(GeoJsonConverterFactory))]
-    public Geometry Location { get; set; } = default!;
+    public Point Location { get; set; } = default!;
     public decimal PricePerYear
     {
         get

@@ -65,6 +65,23 @@ public class BrokerProfileController(
         return SubmissionMapper.SelectToDto().Compile()(submission);
     }
 
+    [HttpPost("submission/cancel")]
+    public async Task CancelSubmission()
+    {
+        var userId = UserId;
+        var submission = await _context
+            .Submissions.FirstOrDefaultAsync(s =>
+                s.ReferenceId == userId 
+                && s.Type == SubmissionType.BrokerAccount
+                && s.Status == SubmissionStatus.Pending
+            );
+
+        if (submission == null)
+            throw new EntityNotFoundException(typeof(Submission), userId);
+
+        await _submissionService.CancelSubmission(submission.Id);
+    }
+
     [HttpPost("otp")]
     public async Task<OtpDto> SendOtp(string phoneNumber)
     {

@@ -11,7 +11,7 @@ public class AreaController(DatabaseContext _context) : DallalController
 {
     // list paginated areas
     [HttpGet]
-    public async Task<List<AreaDto>> GetAreas(
+    public async Task<PaginatedList<AreaDto>> GetAreas(
         [FromQuery] string? search = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10
@@ -28,23 +28,36 @@ public class AreaController(DatabaseContext _context) : DallalController
             .Take(pageSize)
             .ToListAsync();
 
-        return areas
-            .Select(a => new AreaDto
-            {
-                Id = a.Id,
-                Name = new LocalizedStringDto(a.Name),
-                Parent =
-                    a.Parent != null
-                        ? new AreaDto
-                        {
-                            Id = a.Parent.Id,
-                            Name = new LocalizedStringDto(a.Parent.Name),
-                            CreatedAt = a.Parent.CreatedAt,
-                        }
-                        : null,
-                CreatedAt = a.CreatedAt,
-            })
-            .ToList();
+        var count = await _context
+            .Areas.Include(a => a.Parent)
+            .Where(i =>
+                string.IsNullOrEmpty(search)
+                || ((string)i.Name).ToLower().Contains(search.ToLower())
+            )
+            .CountAsync();
+
+        return new PaginatedList<AreaDto>(
+            areas
+                .Select(i => new AreaDto()
+                {
+                    Id = i.Id,
+                    Name = new LocalizedStringDto(i.Name),
+                    Parent =
+                        i.Parent != null
+                            ? new AreaDto
+                            {
+                                Id = i.Parent.Id,
+                                Name = new LocalizedStringDto(i.Parent.Name),
+                                CreatedAt = i.Parent.CreatedAt,
+                            }
+                            : null,
+                    CreatedAt = i.CreatedAt,
+                })
+                .ToList(),
+            page,
+            pageSize,
+            count
+        );
     }
 
     // leaf areas only

@@ -4,6 +4,7 @@ using Dallal_Backend_v2.Controllers.Listings.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
+using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers.EntityDtoMappers;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
@@ -73,7 +74,10 @@ public class BrokerListingsController(
         listing.ListingType = listingDto.ListingType;
         listing.PropertyType = listingDto.PropertyType;
         listing.RentalContractPeriod = listingDto.RentalContractPeriod;
-        listing.Location = new Point(listingDto.Location.Latitude, listingDto.Location.Longitude);
+        listing.Location = new Point(listingDto.Location.Latitude, listingDto.Location.Longitude)
+        {
+            SRID = 4326,
+        };
         listing.Details =
             listingDto
                 .Details?.Select(detail => new ListingDetail
@@ -238,6 +242,7 @@ public class BrokerListingsController(
                 {
                     QueryListingStatus.Pending => SubmissionStatus.Pending,
                     QueryListingStatus.Rejected => SubmissionStatus.Rejected,
+                    QueryListingStatus.Cancelled => SubmissionStatus.Cancelled,
                     _ => throw new ArgumentException("Invalid status"),
                 }
             );
@@ -343,6 +348,27 @@ public class BrokerListingsController(
         }
         return dto;
     }
+
+    [HttpPost("my-listing/{id}/cancel")]
+    public async Task CancelListingSubmission(Guid id)
+    {
+        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.Type == SubmissionType.Listing
+            && s.ReferenceId == id
+            && s.Status == SubmissionStatus.Pending
+        );
+
+        if (submission == null)
+            throw new EntityNotFoundException(typeof(Submission), id);
+
+        var listing = submission.GetNewValue<Listing>();
+        if (listing?.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                "You do not have permission to cancel this submission."
+            );
+
+        await _submissionService.CancelSubmission(submission.Id);
+    }
 }
 
 public enum QueryListingStatus
@@ -352,4 +378,5 @@ public enum QueryListingStatus
     Rejected,
     Completed,
     Archived,
+    Cancelled,
 }

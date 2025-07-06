@@ -133,4 +133,10 @@ public class AdminSubmissionController(
     {
         await _submissionService.RejectSubmission(id, reason);
     }
+
+    [HttpPost("{id}/cancel")]
+    public async Task CancelSubmission(Guid id)
+    {
+        await _submissionService.CancelSubmission(id);
+    }
 }

@@ -8,9 +8,9 @@ public class ListingDetailDto
     public ListingDetailDto(ListingDetail listingDetail)
     {
         Id = listingDetail.Id;
-        DefinitionId = listingDetail.DefinitionId;
         Name = new LocalizedStringDto(listingDetail.Definition.Name);
-        DisplayCategory = listingDetail.Definition.DisplayCategory;
+        Definition = new DetailsDefinitionDto(listingDetail.Definition);
+
         OptionId = listingDetail.OptionId;
         if (listingDetail.OptionId == null)
             Value = listingDetail.Value;
@@ -23,10 +23,9 @@ public class ListingDetailDto
     }
 
     public Guid Id { get; set; }
-    public Guid DefinitionId { get; set; }
+    public DetailsDefinitionDto Definition { get; set; }
     public LocalizedStringDto Name { get; set; }
     public string? Value { get; set; }
     public Guid? OptionId { get; set; }
     public LocalizedStringDto? OptionName { get; set; }
-    public DetailDisplayCategory DisplayCategory { get; set; }
 }

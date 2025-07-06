@@ -5,6 +5,25 @@ namespace Dallal_Backend_v2.Controllers.Dtos;
 
 public class DetailsDefinitionDto
 {
+    public DetailsDefinitionDto(DetailsDefinition definition)
+    {
+        Id = definition.Id;
+        Name = new LocalizedStringDto(definition.Name);
+        Type = definition.Type;
+        SearchBehavior = definition.SearchBehavior;
+        PropertyTypes = definition.PropertyTypes?.ToList();
+        IsHidden = definition.IsHidden;
+        IsHiddenInSearch = definition.IsHiddenInSearch;
+        DisplayCategory = definition.DisplayCategory;
+        Options = definition
+            .Options?.Select(o => new DetailsDefinitionOptionDto
+            {
+                Id = o.Id,
+                Name = new LocalizedStringDto(o.Name),
+            })
+            .ToList();
+    }
+
     public Guid Id { get; set; }
     public LocalizedStringDto Name { get; set; } = new();
     public DetailDefinitionType Type { get; set; }

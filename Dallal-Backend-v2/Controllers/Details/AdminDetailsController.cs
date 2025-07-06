@@ -43,7 +43,7 @@ public class AdminDetailsController : DallalController
         await _context.DetailsDefinitions.AddAsync(detailsDefinition);
         await _context.SaveChangesAsync();
 
-        return MapToDto(detailsDefinition);
+        return new DetailsDefinitionDto(detailsDefinition);
     }
 
     [HttpPut("{id}")]
@@ -53,8 +53,9 @@ public class AdminDetailsController : DallalController
     )
     {
         // Load the entity without navigation properties to avoid tracking conflicts
-        var detailsDefinition = await _context.DetailsDefinitions
-            .FirstOrDefaultAsync(d => d.Id == id);
+        var detailsDefinition = await _context.DetailsDefinitions.FirstOrDefaultAsync(d =>
+            d.Id == id
+        );
 
         if (detailsDefinition is null)
         {
@@ -64,14 +65,14 @@ public class AdminDetailsController : DallalController
         // Update basic properties first
         UpdateBasicProperties(detailsDefinition, updateDetailsDefinitionDto);
         await _context.SaveChangesAsync();
-        
+
         // Handle options separately to avoid tracking conflicts
         await UpdateOptionsDirectlyAsync(id, updateDetailsDefinitionDto.Options);
         await _context.SaveChangesAsync();
 
         // Reload the entity with options for the response
         var updatedDefinition = await GetDetailsDefinitionByIdAsync(id);
-        return MapToDto(updatedDefinition);
+        return new DetailsDefinitionDto(updatedDefinition);
     }
 
     private async Task<DetailsDefinition> GetDetailsDefinitionByIdAsync(Guid id)
@@ -111,24 +112,25 @@ public class AdminDetailsController : DallalController
             .ToHashSet();
 
         // Get the details definition with its options
-        var definition = await _context.DetailsDefinitions
-            .Include(d => d.Options)
+        var definition = await _context
+            .DetailsDefinitions.Include(d => d.Options)
             .FirstOrDefaultAsync(d => d.Id == detailsDefinitionId);
 
         if (definition?.Options == null)
             return;
 
         // Remove options that are not referenced by any listings
-        var optionsToRemove = definition.Options
-            .Where(option => !incomingOptionIds.Contains(option.Id))
+        var optionsToRemove = definition
+            .Options.Where(option => !incomingOptionIds.Contains(option.Id))
             .ToList();
 
         foreach (var optionToRemove in optionsToRemove)
         {
             // Check if this option is referenced by any listings
-            var isReferenced = await _context.ListingDetails
-                .AnyAsync(ld => ld.OptionId == optionToRemove.Id);
-            
+            var isReferenced = await _context.ListingDetails.AnyAsync(ld =>
+                ld.OptionId == optionToRemove.Id
+            );
+
             if (!isReferenced)
             {
                 definition.Options.Remove(optionToRemove);
@@ -142,10 +144,15 @@ public class AdminDetailsController : DallalController
             if (incomingOption.Id.HasValue)
             {
                 // Update existing option
-                var existingOption = definition.Options.FirstOrDefault(o => o.Id == incomingOption.Id.Value);
+                var existingOption = definition.Options.FirstOrDefault(o =>
+                    o.Id == incomingOption.Id.Value
+                );
                 if (existingOption != null)
                 {
-                    existingOption.Name = new LocalizedString { Values = incomingOption.Name.Values };
+                    existingOption.Name = new LocalizedString
+                    {
+                        Values = incomingOption.Name.Values,
+                    };
                 }
             }
             else
@@ -154,34 +161,10 @@ public class AdminDetailsController : DallalController
                 var newOption = new DetailsDefinitionOption
                 {
                     Id = Guid.NewGuid(),
-                    Name = new LocalizedString { Values = incomingOption.Name.Values }
+                    Name = new LocalizedString { Values = incomingOption.Name.Values },
                 };
                 definition.Options.Add(newOption);
             }
         }
-    }
-
-
-
-    private static DetailsDefinitionDto MapToDto(DetailsDefinition detailsDefinition)
-    {
-        return new DetailsDefinitionDto
-        {
-            Id = detailsDefinition.Id,
-            Name = new LocalizedStringDto(detailsDefinition.Name),
-            Type = detailsDefinition.Type,
-            IsHidden = detailsDefinition.IsHidden,
-            IsHiddenInSearch = detailsDefinition.IsHiddenInSearch,
-            DisplayCategory = detailsDefinition.DisplayCategory,
-            PropertyTypes = detailsDefinition.PropertyTypes,
-            SearchBehavior = detailsDefinition.SearchBehavior,
-            Options = detailsDefinition
-                .Options?.Select(option => new DetailsDefinitionOptionDto
-                {
-                    Id = option.Id,
-                    Name = new LocalizedStringDto(option.Name),
-                })
-                .ToList(),
-        };
     }
 }

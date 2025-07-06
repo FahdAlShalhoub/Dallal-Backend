@@ -23,27 +23,6 @@ public class DetailsController : DallalController
             .DetailsDefinitions.Include(i => i.Options)
             .ToListAsync();
 
-        return
-        [
-            .. detailsDefinitions.Select(dd => new DetailsDefinitionDto
-            {
-                Id = dd.Id,
-                Name = new(dd.Name),
-                Type = dd.Type,
-                PropertyTypes = dd.PropertyTypes,
-                IsHidden = dd.IsHidden,
-                SearchBehavior = dd.SearchBehavior,
-                Options =
-                [
-                    .. dd.Options.Select(o => new DetailsDefinitionOptionDto
-                    {
-                        Id = o.Id,
-                        Name = new(o.Name),
-                    }),
-                ],
-                DisplayCategory = dd.DisplayCategory,
-                IsHiddenInSearch = dd.IsHiddenInSearch,
-            }),
-        ];
+        return [.. detailsDefinitions.Select(dd => new DetailsDefinitionDto(dd))];
     }
 }
