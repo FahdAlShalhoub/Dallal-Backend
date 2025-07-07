@@ -244,7 +244,8 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
                     continue; // Skip if no value is provided
                 query = query.Where(listing =>
                     listing.Details.Any(d =>
-                        d.DefinitionId == definition.Id && d.Value.ToLower() == inputValue.ToLower()
+                        d.DefinitionId == definition.Id
+                        && d.Value!.ToLower() == inputValue.ToLower()
                     )
                 );
             }

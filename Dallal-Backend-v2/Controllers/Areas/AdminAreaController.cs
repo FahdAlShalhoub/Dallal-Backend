@@ -42,12 +42,14 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         {
             Id = area.Id,
             Name = new LocalizedStringDto(area.Name),
+            FullName = new LocalizedStringDto(area.FullName),
             Parent =
                 area.Parent != null
                     ? new AreaDto
                     {
                         Id = area.Parent.Id,
                         Name = new LocalizedStringDto(area.Parent.Name),
+                        FullName = new LocalizedStringDto(area.Parent.FullName),
                         CreatedAt = area.Parent.CreatedAt,
                     }
                     : null,
@@ -69,12 +71,14 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         {
             Id = area.Id,
             Name = new LocalizedStringDto(area.Name),
+            FullName = new LocalizedStringDto(area.FullName),
             Parent =
                 area.Parent != null
                     ? new AreaDto
                     {
                         Id = area.Parent.Id,
                         Name = new LocalizedStringDto(area.Parent.Name),
+                        FullName = new LocalizedStringDto(area.Parent.FullName),
                         CreatedAt = area.Parent.CreatedAt,
                     }
                     : null,
@@ -132,12 +136,14 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         {
             Id = area.Id,
             Name = new LocalizedStringDto(area.Name),
+            FullName = new LocalizedStringDto(area.FullName),
             Parent =
                 area.Parent != null
                     ? new AreaDto
                     {
                         Id = area.Parent.Id,
                         Name = new LocalizedStringDto(area.Parent.Name),
+                        FullName = new LocalizedStringDto(area.Parent.FullName),
                         CreatedAt = area.Parent.CreatedAt,
                     }
                     : null,

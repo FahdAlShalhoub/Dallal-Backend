@@ -42,12 +42,14 @@ public class AreaController(DatabaseContext _context) : DallalController
                 {
                     Id = i.Id,
                     Name = new LocalizedStringDto(i.Name),
+                    FullName = new LocalizedStringDto(i.FullName),
                     Parent =
                         i.Parent != null
                             ? new AreaDto
                             {
                                 Id = i.Parent.Id,
                                 Name = new LocalizedStringDto(i.Parent.Name),
+                                FullName = new LocalizedStringDto(i.Parent.FullName),
                                 CreatedAt = i.Parent.CreatedAt,
                             }
                             : null,
@@ -85,12 +87,14 @@ public class AreaController(DatabaseContext _context) : DallalController
             {
                 Id = a.Id,
                 Name = new LocalizedStringDto(a.Name),
+                FullName = new LocalizedStringDto(a.FullName),
                 Parent =
                     a.Parent != null
                         ? new AreaDto
                         {
                             Id = a.Parent.Id,
                             Name = new LocalizedStringDto(a.Parent.Name),
+                            FullName = new LocalizedStringDto(a.Parent.FullName),
                             CreatedAt = a.Parent.CreatedAt,
                         }
                         : null,
@@ -104,6 +108,7 @@ public class AreaDto
 {
     public Guid Id { get; set; }
     public LocalizedStringDto Name { get; set; } = default!;
+    public LocalizedStringDto FullName { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
     public AreaDto? Parent { get; set; }
 }
