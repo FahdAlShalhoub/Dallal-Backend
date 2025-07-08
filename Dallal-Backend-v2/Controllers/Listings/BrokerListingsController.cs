@@ -330,9 +330,7 @@ public class BrokerListingsController(
         var existingListing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
 
         var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
-            s.Type == SubmissionType.Listing
-            && s.ReferenceId == id
-            && s.Status == SubmissionStatus.Pending
+            s.Type == SubmissionType.Listing && s.ReferenceId == id
         );
 
         var dto = await ListingMapper.MapToDto(
@@ -368,6 +366,70 @@ public class BrokerListingsController(
             );
 
         await _submissionService.CancelSubmission(submission.Id);
+    }
+
+    [HttpPost("my-listing/{id}/republish")]
+    public async Task RepublishListingSubmission(Guid id)
+    {
+        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.Type == SubmissionType.Listing
+            && s.ReferenceId == id
+            && s.Status == SubmissionStatus.Cancelled
+        );
+
+        if (submission == null)
+            throw new EntityNotFoundException(typeof(Submission), id);
+
+        var listing = submission.GetNewValue<Listing>();
+        if (listing?.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                "You do not have permission to republish this submission."
+            );
+
+        submission.Status = SubmissionStatus.Pending;
+        await _context.SaveChangesAsync();
+    }
+
+    [HttpPost("my-listing/{id}/archive")]
+    public async Task ArchiveListing(Guid id)
+    {
+        var listing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
+
+        if (listing == null)
+            throw new EntityNotFoundException(typeof(Listing), id);
+
+        if (listing.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                "You do not have permission to archive this listing."
+            );
+
+        if (listing.Status != ListingStatus.Active)
+            throw new InvalidOperationException("Only active listings can be archived.");
+
+        listing.Status = ListingStatus.Archived;
+        listing.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
+    [HttpPost("my-listing/{id}/unarchive")]
+    public async Task UnarchiveListing(Guid id)
+    {
+        var listing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
+
+        if (listing == null)
+            throw new EntityNotFoundException(typeof(Listing), id);
+
+        if (listing.BrokerId != UserId)
+            throw new UnauthorizedAccessException(
+                "You do not have permission to unarchive this listing."
+            );
+
+        if (listing.Status != ListingStatus.Archived)
+            throw new InvalidOperationException("Only archived listings can be unarchived.");
+
+        listing.Status = ListingStatus.Active;
+        listing.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
     }
 }
 
