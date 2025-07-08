@@ -74,7 +74,7 @@ public class AreaController(DatabaseContext _context) : DallalController
             .Areas.Include(a => a.Parent)
             .Where(i =>
                 string.IsNullOrEmpty(search)
-                || ((string)i.Name).ToLower().Contains(search.ToLower())
+                || ((string)i.FullName).ToLower().Contains(search.ToLower())
             )
             .Where(a => a.Children.Count == 0) // only leaf areas
             .OrderBy(a => a.Id)
