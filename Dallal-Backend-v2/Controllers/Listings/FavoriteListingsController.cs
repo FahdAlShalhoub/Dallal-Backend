@@ -1,4 +1,4 @@
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers.EntityDtoMappers;

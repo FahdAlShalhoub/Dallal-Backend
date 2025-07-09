@@ -2,7 +2,7 @@ using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities;
 
 namespace Dallal_Backend_v2.ThirdParty;

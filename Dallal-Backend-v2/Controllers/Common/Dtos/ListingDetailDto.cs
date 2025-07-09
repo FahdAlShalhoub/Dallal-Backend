@@ -1,7 +1,7 @@
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Details;
 
-namespace Dallal_Backend_v2.Controllers.Dtos;
+namespace Dallal_Backend_v2.Controllers.Common.Dtos;
 
 public class ListingDetailDto
 {

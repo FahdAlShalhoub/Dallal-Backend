@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Controllers;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Areas.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -102,13 +103,4 @@ public class AreaController(DatabaseContext _context) : DallalController
             })
             .ToList();
     }
-}
-
-public class AreaDto
-{
-    public Guid Id { get; set; }
-    public LocalizedStringDto Name { get; set; } = default!;
-    public LocalizedStringDto FullName { get; set; } = default!;
-    public DateTime CreatedAt { get; set; }
-    public AreaDto? Parent { get; set; }
 }

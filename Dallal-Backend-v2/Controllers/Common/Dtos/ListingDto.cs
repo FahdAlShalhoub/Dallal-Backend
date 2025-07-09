@@ -1,13 +1,7 @@
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities.Enums;
-using NetTopologySuite.Geometries;
 
-namespace Dallal_Backend_v2.Controllers.Dtos;
-
-public class GetRecentListingsResponse
-{
-    public int RecentListingsCount { get; set; }
-    public List<ListingDto> ListingsList { get; set; }
-}
+namespace Dallal_Backend_v2.Controllers.Common.Dtos;
 
 public class ListingDto
 {
@@ -32,24 +26,4 @@ public class ListingDto
     public bool IsViewed { get; set; }
     public List<DocumentDto> Images { get; set; } = [];
     public List<DocumentDto> Videos { get; set; } = [];
-}
-
-public class ListingDetailedDto : ListingDto
-{
-    public List<ListingDetailDto> Details { get; set; } = default!;
-}
-
-public record ListingBrokerDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public string Email { get; set; } = default!;
-    public string? PhoneNumber { get; set; }
-    public DocumentDto? Image { get; set; }
-}
-
-public record CoordinateDto()
-{
-    public double Longitude { get; set; }
-    public double Latitude { get; set; }
 }

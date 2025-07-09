@@ -1,4 +1,5 @@
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Analytics.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -60,15 +61,4 @@ public class AnalyticsController(
 
         return new ViewCountResponse { TotalViews = totalViews, UniqueViews = uniqueViews };
     }
-}
-
-public class AddViewDto
-{
-    public string? DeviceUuid { get; set; }
-}
-
-public class ViewCountResponse
-{
-    public int TotalViews { get; set; }
-    public int UniqueViews { get; set; }
 }

@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Auth.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
@@ -296,5 +297,3 @@ public class AuthController(
         }
     }
 }
-
-public record struct UpdateUserRequest(string? FirstName, string? LastName, string? Language);

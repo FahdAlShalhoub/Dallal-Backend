@@ -1,6 +1,6 @@
 using Dallal_Backend_v2.Entities;
 
-namespace Dallal_Backend_v2.Controllers.Dtos;
+namespace Dallal_Backend_v2.Controllers.Common.Dtos;
 
 public class LocalizedStringDto
 {

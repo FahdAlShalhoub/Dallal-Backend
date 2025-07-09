@@ -1,4 +1,4 @@
-namespace Dallal_Backend_v2.Controllers.Dtos;
+namespace Dallal_Backend_v2.Controllers.Common.Dtos;
 
 public class PaginatedList<T>(List<T> items, int currentPage, int count, int pageSize)
     where T : class

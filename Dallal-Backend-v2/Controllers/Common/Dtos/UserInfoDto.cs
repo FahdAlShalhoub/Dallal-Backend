@@ -1,12 +1,6 @@
 using Dallal_Backend_v2.Entities.Enums;
 
-namespace Dallal_Backend_v2.Controllers.Dtos;
-
-public record AuthenticatedUserDto
-{
-    public string AccessToken { get; init; }
-    public UserInfoDto User { get; init; }
-}
+namespace Dallal_Backend_v2.Controllers.Common.Dtos;
 
 public record UserInfoDto
 {

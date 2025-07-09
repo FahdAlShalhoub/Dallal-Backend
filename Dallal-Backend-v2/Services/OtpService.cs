@@ -1,5 +1,5 @@
 using System.Security;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Twilio;
 using Twilio.Http;
 using Twilio.Rest.Api.V2010.Account;

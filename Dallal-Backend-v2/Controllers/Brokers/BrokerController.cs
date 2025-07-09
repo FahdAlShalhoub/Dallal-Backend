@@ -1,5 +1,5 @@
 using Dallal_Backend_v2.Controllers.Brokers.Dtos;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.ThirdParty;

@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Controllers.Listings.Dtos;
+using Dallal_Backend_v2.Controllers.Listings.QueryDtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
-using Dallal_Backend_v2.QueryDtos;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.EntityFrameworkCore;

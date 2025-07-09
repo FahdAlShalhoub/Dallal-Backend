@@ -1,9 +1,9 @@
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using NetTopologySuite.Geometries;
 
-namespace Dallal_Backend_v2.QueryDtos;
+namespace Dallal_Backend_v2.Controllers.Listings.QueryDtos;
 
 public class ListingQueryDto
 {
@@ -36,9 +36,4 @@ public class ListingQueryDto
     public List<Document> Videos { get; set; } = [];
     public bool IsFavorite { get; set; }
     public bool IsViewed { get; set; }
-}
-
-public class DetailedListingQueryDto : ListingQueryDto
-{
-    public List<ListingDetailDto> Details { get; set; } = default!;
 }

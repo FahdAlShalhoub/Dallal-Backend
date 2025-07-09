@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Controllers.Listings.Dtos;
+using Dallal_Backend_v2.Controllers.Listings.QueryDtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
@@ -213,7 +214,7 @@ public class BrokerListingsController(
         [FromQuery] QueryListingStatus status = QueryListingStatus.Active
     )
     {
-        List<QueryDtos.ListingQueryDto> listings;
+        List<ListingQueryDto> listings;
         int totalCount;
         if (
             status == QueryListingStatus.Active
@@ -255,7 +256,7 @@ public class BrokerListingsController(
     }
 
     private async Task<(
-        List<QueryDtos.ListingQueryDto> listings,
+        List<ListingQueryDto> listings,
         int totalCount
     )> GetMyListingsFromListings(int page, int pageSize, ListingStatus status)
     {
@@ -276,7 +277,7 @@ public class BrokerListingsController(
     }
 
     private async Task<(
-        List<QueryDtos.ListingQueryDto> listings,
+        List<ListingQueryDto> listings,
         int totalCount
     )> GetMyListingsFromSubmissions(int page, int pageSize, SubmissionStatus status)
     {

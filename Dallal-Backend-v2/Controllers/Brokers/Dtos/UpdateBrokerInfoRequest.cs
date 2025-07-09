@@ -1,4 +1,4 @@
-using Dallal_Backend_v2.Controllers.Dtos;
+using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Controllers.Profiles.Dtos;
 
 namespace Dallal_Backend_v2.Controllers.Brokers.Dtos;
