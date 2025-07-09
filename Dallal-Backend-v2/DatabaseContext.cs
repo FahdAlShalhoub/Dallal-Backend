@@ -1,5 +1,6 @@
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Details;
+using Dallal_Backend_v2.Entities.Listings;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public class DatabaseContext : DbContext
 
     public DbSet<Listing> Listings { get; set; }
     public DbSet<ListingDetail> ListingDetails { get; set; }
+    public DbSet<ListingView> ListingViews { get; set; }
     public DbSet<DetailsDefinition> DetailsDefinitions { get; set; }
     public DbSet<DetailsDefinitionOption> DetailsDefinitionOptions { get; set; }
     public DbSet<Area> Areas { get; set; }
@@ -51,6 +53,13 @@ public class DatabaseContext : DbContext
             listing.HasIndex(e => e.CreatedAt).IsDescending();
             listing.Property(e => e.Location).HasColumnType("geometry (point)").IsRequired();
             listing.Navigation(i => i.Details).AutoInclude();
+        });
+
+        modelBuilder.Entity<ListingView>(listingView =>
+        {
+            listingView.HasIndex(e => e.ViewedAt).IsDescending();
+            listingView.HasIndex(e => new { e.ListingId, e.UserId });
+            listingView.HasIndex(e => new { e.ListingId, e.DeviceUuid });
         });
 
         modelBuilder.Entity<User>(user =>

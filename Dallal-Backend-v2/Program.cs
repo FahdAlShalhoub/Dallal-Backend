@@ -78,6 +78,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 
     builder.Services.AddScoped<SubmissionService>();
     builder.Services.AddScoped<OtpService>();
+    builder.Services.AddScoped<ListingViewService>();
 
     string? lokiUrl = builder.Configuration.GetRequiredSection("Loki")["Uri"];
     Trace.Assert(!string.IsNullOrEmpty(lokiUrl), "Loki url not found");

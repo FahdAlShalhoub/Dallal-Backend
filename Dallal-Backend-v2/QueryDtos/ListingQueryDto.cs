@@ -35,6 +35,7 @@ public class ListingQueryDto
     public List<Document> Images { get; set; } = [];
     public List<Document> Videos { get; set; } = [];
     public bool IsFavorite { get; set; }
+    public bool IsViewed { get; set; }
 }
 
 public class DetailedListingQueryDto : ListingQueryDto

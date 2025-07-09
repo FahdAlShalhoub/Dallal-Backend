@@ -4,6 +4,7 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers;
 using Dallal_Backend_v2.Helpers.EntityDtoMappers;
+using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,10 @@ namespace Dallal_Backend_v2.Controllers;
 
 [ApiController]
 [Route("listings")]
-public class ListingsController(DatabaseContext _context, S3 s3) : DallalController
+public class ListingsController(
+    DatabaseContext _context,
+    S3 s3
+) : DallalController
 {
     [HttpGet("recent")]
     public async Task<GetRecentListingsResponse> GetRecentListings()
@@ -77,9 +81,9 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
         query = searchParams?.SortBy switch
         {
-            ListingSortBy.Popular => query.OrderByDescending(listing => listing.CreatedAt),
+            ListingSortBy.Popular => SortByPopular(query),
             ListingSortBy.Newest => query.OrderByDescending(listing => listing.CreatedAt),
-            ListingSortBy.Cheapest => query.OrderBy(listing => listing.CreatedAt),
+            ListingSortBy.Cheapest => query.OrderBy(listing => listing.PricePerContract),
             ListingSortBy.MostExpensive => query.OrderByDescending(listing =>
                 listing.PricePerContract
             ),
@@ -113,6 +117,7 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
+            .Include(listing => listing.Views)
             .Select(ListingMapper.SelectToDetailQueryDto(UserIdOrNull))
             .FirstOrDefaultAsync();
 
@@ -123,6 +128,7 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
         return await ListingMapper.SelectToDetailedDto(query, s3);
     }
+
 
     private async Task<IQueryable<Listing>> ConstructFilter(
         IQueryable<Listing> query,
@@ -338,6 +344,17 @@ public class ListingsController(DatabaseContext _context, S3 s3) : DallalControl
 
         return query.Where(listing => boundingBox.Contains(listing.Location));
     }
+
+    private IQueryable<Listing> SortByPopular(IQueryable<Listing> query)
+    {
+        // Sort by actual view count using the navigation property
+        // Consider views from the last 30 days for freshness
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+
+        return query
+            .OrderByDescending(listing => listing.Views.Count(v => v.ViewedAt >= thirtyDaysAgo))
+            .ThenByDescending(listing => listing.CreatedAt);
+    }
 }
 
 public class ListingsSearchDto
@@ -366,3 +383,4 @@ public class DetailSearchDto
     public List<string>? Values { get; set; } = [];
     public List<Guid>? Options { get; set; } = [];
 }
+

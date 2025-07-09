@@ -5,6 +5,7 @@ using Dallal_Backend_v2;
 using Dallal_Backend_v2.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -14,9 +15,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dallal_Backend_v2
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250708220638_ListingViews")]
+    partial class ListingViews
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -503,7 +506,7 @@ namespace Dallal_Backend_v2
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Listings.ListingView", b =>
                 {
                     b.HasOne("Dallal_Backend_v2.Entities.Listing", "Listing")
-                        .WithMany("Views")
+                        .WithMany()
                         .HasForeignKey("ListingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -567,8 +570,6 @@ namespace Dallal_Backend_v2
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Listing", b =>
                 {
                     b.Navigation("Details");
-
-                    b.Navigation("Views");
                 });
 
             modelBuilder.Entity("Dallal_Backend_v2.Entities.Users.User", b =>

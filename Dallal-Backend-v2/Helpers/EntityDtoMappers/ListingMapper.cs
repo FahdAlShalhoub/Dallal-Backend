@@ -46,6 +46,8 @@ public static class ListingMapper
             Description = listing.Description,
             IsFavorite =
                 userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
+            IsViewed =
+                userIdOrNull.HasValue && listing.Views.Any(v => v.UserId == userIdOrNull.Value),
         };
 
     public static async Task<ListingDto> SelectToDto(ListingQueryDto listing, S3 s3)
@@ -91,6 +93,7 @@ public static class ListingMapper
                 Latitude = listing.Location.Coordinate.X,
             },
             IsFavorite = listing.IsFavorite,
+            IsViewed = listing.IsViewed,
             Images = images,
             Videos = videos,
         };
@@ -142,6 +145,7 @@ public static class ListingMapper
                 Latitude = listing.Location.Coordinate.X,
             },
             IsFavorite = listing.IsFavorite,
+            IsViewed = listing.IsViewed,
             Images = images,
             Videos = videos,
             Details = listing.Details,
@@ -182,6 +186,8 @@ public static class ListingMapper
             Currency = listing.Currency,
             IsFavorite =
                 userIdOrNull.HasValue && listing.Favorites.Any(f => f.Id == userIdOrNull.Value),
+            IsViewed =
+                userIdOrNull.HasValue && listing.Views.Any(v => v.UserId == userIdOrNull.Value),
             Details = listing.Details.Select(detail => new ListingDetailDto(detail)).ToList(),
         };
 

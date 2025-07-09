@@ -29,6 +29,7 @@ public class ListingDto
     public DateTime CreatedAt { get; set; }
     public CoordinateDto Location { get; set; }
     public bool IsFavorite { get; set; }
+    public bool IsViewed { get; set; }
     public List<DocumentDto> Images { get; set; } = [];
     public List<DocumentDto> Videos { get; set; } = [];
 }

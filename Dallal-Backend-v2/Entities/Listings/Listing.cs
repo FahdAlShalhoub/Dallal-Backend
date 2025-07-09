@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2.Entities.Enums;
+using Dallal_Backend_v2.Entities.Listings;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Helpers;
 using NetTopologySuite.Geometries;
@@ -56,6 +57,9 @@ public class Listing
 
     [DoNotIncludeInSubmission]
     public List<Buyer> Favorites { get; set; } = [];
+
+    [DoNotIncludeInSubmission]
+    public List<ListingView> Views { get; set; } = [];
 
     public List<Document> Images { get; set; } = [];
     public List<Document> Videos { get; set; } = [];
