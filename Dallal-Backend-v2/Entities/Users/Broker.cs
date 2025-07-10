@@ -17,7 +17,7 @@ public class Broker
     public Guid Id { get; set; }
 
     [DoNotIncludeInSubmission]
-    public User User { get; set; }
+    public User User { get; set; } = default!;
     public BrokerStatus Status { get; set; }
     public string? AgencyName { get; set; }
     public string? CertificateNumber { get; set; }

@@ -21,6 +21,12 @@ public class Submission
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public SubmissionType Type { get; set; }
+    
+    public int BrokerId { get; set; }
+    public Broker? Broker { get; set; }
+    
+    public int ListingId { get; set; }
+    public Listing? Listing { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? OldData { get; private set; }

@@ -26,6 +26,7 @@ public class Listing
     public int BathroomCount { get; set; }
     public decimal AreaInMetersSq { get; set; }
     public ListingType ListingType { get; set; }
+    public ListingType Type { get; set; }
     public PropertyType PropertyType { get; set; }
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;

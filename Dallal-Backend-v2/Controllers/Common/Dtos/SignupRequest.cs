@@ -7,11 +7,11 @@ public record SignupRequest
 {
     [Required]
     [EmailAddress]
-    public string Email { get; init; }
+    public string Email { get; init; } = default!;
 
     [Required]
     [MinLength(6)]
-    public string Password { get; init; }
+    public string Password { get; init; } = default!;
 
     public string? FirstName { get; init; }
 
@@ -23,5 +23,5 @@ public record SignupRequest
     public UserType UserType { get; init; }
 
     [Required]
-    public string PreferredLanguage { get; init; }
+    public string PreferredLanguage { get; init; } = default!;
 }

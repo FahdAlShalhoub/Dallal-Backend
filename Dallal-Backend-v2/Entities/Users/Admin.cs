@@ -10,5 +10,5 @@ public class Admin
     }
 
     public Guid Id { get; set; }
-    public User User { get; set; }
+    public User User { get; set; } = default!;
 }

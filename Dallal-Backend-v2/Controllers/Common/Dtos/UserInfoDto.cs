@@ -10,5 +10,5 @@ public record UserInfoDto
     public string? Email { get; init; }
     public string? Phone { get; init; }
     public string? PreferredLanguage { get; init; }
-    public List<UserType> Roles { get; init; }
+    public List<UserType> Roles { get; init; } = [];
 }

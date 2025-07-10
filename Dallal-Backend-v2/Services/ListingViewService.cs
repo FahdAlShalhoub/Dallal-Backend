@@ -1,9 +1,10 @@
 using Dallal_Backend_v2.Entities.Listings;
+using Dallal_Backend_v2.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Services;
 
-public class ListingViewService(DatabaseContext _context)
+public class ListingViewService(IListingViewRepository _listingViewRepository, IListingRepository _listingRepository)
 {
     public async Task<ListingView> AddViewAsync(
         Guid listingId,
@@ -14,21 +15,13 @@ public class ListingViewService(DatabaseContext _context)
     )
     {
         // Check if listing exists
-        var listingExists = await _context.Listings.AnyAsync(l => l.Id == listingId);
+        var listingExists = await _listingRepository.AnyAsync(l => l.Id == listingId);
         if (!listingExists)
         {
             throw new KeyNotFoundException($"Listing with ID {listingId} not found.");
         }
 
-        var duplicateCheck = await _context
-            .ListingViews.Where(lv =>
-                lv.ListingId == listingId && lv.ViewedAt > DateTime.UtcNow.AddMinutes(-30)
-            )
-            .Where(lv =>
-                (userId.HasValue && lv.UserId == userId)
-                || (!string.IsNullOrEmpty(deviceUuid) && lv.DeviceUuid == deviceUuid)
-            )
-            .FirstOrDefaultAsync();
+        var duplicateCheck = await _listingViewRepository.GetExistingViewAsync(listingId, userId, deviceUuid);
 
         if (duplicateCheck != null)
         {
@@ -46,56 +39,28 @@ public class ListingViewService(DatabaseContext _context)
             UserAgent = userAgent,
         };
 
-        _context.ListingViews.Add(view);
-        await _context.SaveChangesAsync();
+        await _listingViewRepository.AddAsync(view);
 
         return view;
     }
 
     public async Task<int> GetViewCountAsync(Guid listingId)
     {
-        return await _context.ListingViews.Where(lv => lv.ListingId == listingId).CountAsync();
+        return await _listingViewRepository.GetViewCountAsync(listingId);
     }
 
     public async Task<int> GetUniqueViewCountAsync(Guid listingId)
     {
-        var uniqueUserViews = await _context
-            .ListingViews.Where(lv => lv.ListingId == listingId && lv.UserId.HasValue)
-            .Select(lv => lv.UserId)
-            .Distinct()
-            .CountAsync();
-
-        var uniqueDeviceViews = await _context
-            .ListingViews.Where(lv =>
-                lv.ListingId == listingId
-                && !lv.UserId.HasValue
-                && !string.IsNullOrEmpty(lv.DeviceUuid)
-            )
-            .Select(lv => lv.DeviceUuid)
-            .Distinct()
-            .CountAsync();
-
-        return uniqueUserViews + uniqueDeviceViews;
+        return await _listingViewRepository.GetUniqueViewCountAsync(listingId);
     }
 
     public async Task<Dictionary<Guid, int>> GetViewCountsAsync(List<Guid> listingIds)
     {
-        return await _context
-            .ListingViews.Where(lv => listingIds.Contains(lv.ListingId))
-            .GroupBy(lv => lv.ListingId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count());
+        return await _listingViewRepository.GetViewCountsAsync(listingIds);
     }
 
     public async Task<List<Guid>> GetPopularListingIds(int limit = 10, DateTime? since = null)
     {
-        var sinceDate = since ?? DateTime.UtcNow.AddDays(-30);
-
-        return await _context
-            .ListingViews.Where(lv => lv.ViewedAt >= sinceDate)
-            .GroupBy(lv => lv.ListingId)
-            .OrderByDescending(g => g.Count())
-            .Take(limit)
-            .Select(g => g.Key)
-            .ToListAsync();
+        return await _listingViewRepository.GetPopularListingIds(limit, since);
     }
 }
