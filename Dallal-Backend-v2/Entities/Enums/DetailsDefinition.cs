@@ -2,9 +2,8 @@ using Dallal_Backend_v2.Entities.Enums;
 
 namespace Dallal_Backend_v2.Entities.Details;
 
-public class DetailsDefinition
+public class DetailsDefinition : BaseEntity
 {
-    public Guid Id { get; set; }
     public LocalizedString Name { get; set; } = default!;
     public DetailDefinitionType Type { get; set; }
     public DetailDefinitionSearchBehavior SearchBehavior { get; set; }

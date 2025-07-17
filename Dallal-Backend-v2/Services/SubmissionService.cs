@@ -3,12 +3,16 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Repositories;
+using Dallal_Backend_v2.Repositories.Submissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dallal_Backend_v2.Services;
 
-public class SubmissionService(ISubmissionRepository _submissionRepository, IServiceProvider _serviceProvider)
+public class SubmissionService(
+    ISubmissionRepository _submissionRepository,
+    IServiceProvider _serviceProvider
+)
 {
     public async Task<Submission> UpsertSubmission<T>(
         SubmissionType type,
@@ -18,12 +22,9 @@ public class SubmissionService(ISubmissionRepository _submissionRepository, ISer
     )
         where T : class
     {
-        var submission = await _submissionRepository
-            .FirstOrDefaultAsync(s =>
-                s.Type == type
-                && s.ReferenceId == referenceId
-                && s.Status == SubmissionStatus.Pending
-            );
+        var submission = await _submissionRepository.FirstOrDefaultAsync(s =>
+            s.Type == type && s.ReferenceId == referenceId && s.Status == SubmissionStatus.Pending
+        );
 
         var isNew = submission == null;
 
@@ -53,7 +54,7 @@ public class SubmissionService(ISubmissionRepository _submissionRepository, ISer
 
     public async Task RejectSubmission(Guid id, string reason)
     {
-        var submission = await _submissionRepository.GetByIdAsync(id);
+        var submission = await _submissionRepository.GetAsync(id);
         if (submission == null)
         {
             throw new KeyNotFoundException($"Submission with ID {id} not found.");
@@ -67,7 +68,7 @@ public class SubmissionService(ISubmissionRepository _submissionRepository, ISer
 
     public async Task CancelSubmission(Guid id)
     {
-        var submission = await _submissionRepository.GetByIdAsync(id);
+        var submission = await _submissionRepository.GetAsync(id);
         if (submission == null)
         {
             throw new KeyNotFoundException($"Submission with ID {id} not found.");
@@ -84,7 +85,7 @@ public class SubmissionService(ISubmissionRepository _submissionRepository, ISer
 
     public async Task ApproveSubmission(Guid id)
     {
-        var submission = await _submissionRepository.GetByIdAsync(id);
+        var submission = await _submissionRepository.GetAsync(id);
         if (submission == null)
         {
             throw new KeyNotFoundException($"Submission with ID {id} not found.");
@@ -107,17 +108,18 @@ public class SubmissionService(ISubmissionRepository _submissionRepository, ISer
     }
 
     private async Task ApplyChangesAndInsertInDb<T>(Submission submission)
-        where T : class
+        where T : BaseEntity
     {
         var repository = _serviceProvider.GetRequiredService<IRepository<T>>();
-        
+
         // Use FirstOrDefaultAsync with predicate since entities use Guid IDs
-        T? reference = await repository.FirstOrDefaultAsync(entity => 
-            EF.Property<Guid>(entity, "Id") == submission.ReferenceId);
+        T? reference = await repository.FirstOrDefaultAsync(entity =>
+            EF.Property<Guid>(entity, "Id") == submission.ReferenceId
+        );
         bool isNew = reference == null;
-        
+
         reference = ApplyChanges<T>(submission, reference);
-        
+
         if (isNew)
             await repository.AddAsync(reference);
         else

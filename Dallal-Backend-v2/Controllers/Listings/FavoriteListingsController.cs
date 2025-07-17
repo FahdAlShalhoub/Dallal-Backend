@@ -21,14 +21,14 @@ public class FavoriteListingsController(DatabaseContext _context, S3 s3) : Dalla
     )
     {
         var query = _context.Listings.Where(i => i.Favorites.Any(f => f.Id == UserId));
-
+        var userId = UserIdOrNull;
         var listingsQuery = await query
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Definition)
             .Include(listing => listing.Details)
             .ThenInclude(detail => detail.Option)
             .OrderByDescending(i => i.CreatedAt)
-            .Select(ListingMapper.SelectToQueryDto(UserIdOrNull))
+            .Select(ListingMapper.SelectToQueryDto(userId))
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -64,8 +64,6 @@ public class FavoriteListingsController(DatabaseContext _context, S3 s3) : Dalla
             if (!buyer.FavoriteListings.Contains(listing))
                 buyer.FavoriteListings.Add(listing);
         }
-
-        await _context.SaveChangesAsync();
     }
 
     [HttpDelete]
@@ -87,7 +85,5 @@ public class FavoriteListingsController(DatabaseContext _context, S3 s3) : Dalla
             if (buyer.FavoriteListings.Contains(listing))
                 buyer.FavoriteListings.Remove(listing);
         }
-
-        await _context.SaveChangesAsync();
     }
 }

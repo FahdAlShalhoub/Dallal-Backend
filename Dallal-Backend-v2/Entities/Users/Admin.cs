@@ -1,6 +1,6 @@
 namespace Dallal_Backend_v2.Entities.Users;
 
-public class Admin
+public class Admin : BaseEntity
 {
     private Admin() { }
 
@@ -8,7 +8,5 @@ public class Admin
     {
         Id = id;
     }
-
-    public Guid Id { get; set; }
     public User User { get; set; } = default!;
 }

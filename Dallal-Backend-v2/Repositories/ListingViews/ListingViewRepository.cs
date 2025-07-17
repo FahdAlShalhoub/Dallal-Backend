@@ -1,7 +1,7 @@
 using Dallal_Backend_v2.Entities.Listings;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dallal_Backend_v2.Repositories;
+namespace Dallal_Backend_v2.Repositories.ListingViews;
 
 public class ListingViewRepository : Repository<ListingView>, IListingViewRepository
 {

@@ -4,15 +4,16 @@ using Dallal_Backend_v2.Controllers.Areas.Dtos;
 using Dallal_Backend_v2.Controllers.Common.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Repositories;
+using Dallal_Backend_v2.Repositories.Areas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Controllers.Areas;
 
 [Route("admin/areas")]
 [Authorize(Roles = "admin")]
-public class AdminAreaController(DatabaseContext _context) : DallalController
+public class AdminAreaController(IAreaRepository _areaRepository) : DallalController
 {
     [HttpPost]
     public async Task<AreaDto> CreateArea([FromBody] CreateAreaRequest request)
@@ -28,7 +29,7 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         // Set parent if provided
         if (request.ParentId.HasValue)
         {
-            var parent = await _context.Areas.FindAsync(request.ParentId.Value);
+            var parent = await _areaRepository.FindAsync(request.ParentId.Value);
             if (parent == null)
             {
                 throw new ValidationException("Parent area not found");
@@ -36,8 +37,7 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
             area.Parent = parent;
         }
 
-        _context.Areas.Add(area);
-        await _context.SaveChangesAsync();
+        await _areaRepository.AddAsync(area);
 
         return new AreaDto
         {
@@ -61,12 +61,7 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
     [HttpGet("{id}")]
     public async Task<AreaDto> GetArea(Guid id)
     {
-        var area = await _context.Areas.Include(a => a.Parent).FirstOrDefaultAsync(a => a.Id == id);
-
-        if (area == null)
-        {
-            throw new EntityNotFoundException($"Area with ID {id} not found");
-        }
+        var area = await _areaRepository.GetAsync(id);
 
         return new AreaDto
         {
@@ -91,12 +86,7 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
     [HttpPut("{id}")]
     public async Task<AreaDto> UpdateArea(Guid id, [FromBody] UpdateAreaRequest request)
     {
-        var area = await _context.Areas.Include(a => a.Parent).FirstOrDefaultAsync(a => a.Id == id);
-
-        if (area == null)
-        {
-            throw new EntityNotFoundException($"Area with ID {id} not found");
-        }
+        var area = await _areaRepository.GetAsync(id);
 
         // Update name
         area.Name = new LocalizedString { Values = request.Name.Values };
@@ -105,33 +95,23 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         // Update parent if provided
         if (request.ParentId.HasValue)
         {
-            // Prevent circular references
             if (request.ParentId.Value == id)
-            {
                 throw new ValidationException("An area cannot be its own parent");
-            }
 
-            // Check if the new parent would create a circular reference
-            if (await WouldCreateCircularReference(id, request.ParentId.Value))
+            if (await WouldCreateCircularReferenceAsync(area, request.ParentId.Value))
             {
                 throw new ValidationException(
                     "Setting this parent would create a circular reference"
                 );
             }
-
-            var parent = await _context.Areas.FindAsync(request.ParentId.Value);
-            if (parent == null)
-            {
-                throw new ValidationException("Parent area not found");
-            }
-            area.Parent = parent;
+            area.Parent = await _areaRepository.GetAsync(request.ParentId.Value);
         }
         else
         {
             area.Parent = null;
         }
 
-        await _context.SaveChangesAsync();
+        await _areaRepository.UpdateAsync(area);
 
         return new AreaDto
         {
@@ -152,19 +132,25 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
         };
     }
 
+    private async Task<bool> WouldCreateCircularReferenceAsync(Area area, Guid value)
+    {
+        var parent = await _areaRepository.FindAsync(value);
+        while (parent != null)
+        {
+            if (parent.Id == area.Id)
+                return true; 
+            
+            parent = await _areaRepository.GetAsync(parent.Id);
+        }
+        return false; 
+    }
+
     // Delete an area
     [HttpDelete("{id}")]
     public async Task DeleteArea(Guid id)
     {
-        var area = await _context
-            .Areas.Include(a => a.Children)
-            .FirstOrDefaultAsync(a => a.Id == id);
-
-        if (area == null)
-        {
-            throw new EntityNotFoundException($"Area with ID {id} not found");
-        }
-
+        var area = await _areaRepository.GetAsync(id);
+     
         // Check if area has children
         if (area.Children.Any())
         {
@@ -172,38 +158,6 @@ public class AdminAreaController(DatabaseContext _context) : DallalController
                 "Cannot delete area that has child areas. Delete or reassign child areas first."
             );
         }
-
-        // Check if area is referenced by any listings
-        var hasListings = await _context.Listings.AnyAsync(l => l.AreaId == id);
-        if (hasListings)
-        {
-            throw new InvalidOperationException(
-                "Cannot delete area that is referenced by listings."
-            );
-        }
-
-        _context.Areas.Remove(area);
-        await _context.SaveChangesAsync();
-    }
-
-    // Helper method to check for circular references
-    private async Task<bool> WouldCreateCircularReference(Guid areaId, Guid proposedParentId)
-    {
-        var current = await _context
-            .Areas.Include(a => a.Parent)
-            .FirstOrDefaultAsync(a => a.Id == proposedParentId);
-
-        while (current?.Parent != null)
-        {
-            if (current.Parent.Id == areaId)
-            {
-                return true;
-            }
-            current = await _context
-                .Areas.Include(a => a.Parent)
-                .FirstOrDefaultAsync(a => a.Id == current.Parent.Id);
-        }
-
-        return false;
+        await _areaRepository.DeleteAsync(area);
     }
 }

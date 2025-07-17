@@ -5,10 +5,8 @@ using Dallal_Backend_v2.Entities.Users;
 namespace Dallal_Backend_v2.Entities.Listings;
 
 [Table("ListingViews")]
-public class ListingView
+public class ListingView : BaseEntity
 {
-    [Key]
-    public Guid Id { get; set; }
 
     [Required]
     public Guid ListingId { get; set; }

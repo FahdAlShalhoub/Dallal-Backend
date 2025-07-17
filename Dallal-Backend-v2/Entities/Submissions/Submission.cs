@@ -5,7 +5,7 @@ using Dallal_Backend_v2.Services;
 
 namespace Dallal_Backend_v2.Entities.Submissions;
 
-public class Submission
+public class Submission : BaseEntity
 {
     public static readonly JsonSerializerOptions s_jsonOptions = CreateJsonOptions();
 
@@ -17,16 +17,7 @@ public class Submission
         return _jsonOptions;
     }
 
-    public Guid Id { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public SubmissionType Type { get; set; }
-    
-    public int BrokerId { get; set; }
-    public Broker? Broker { get; set; }
-    
-    public int ListingId { get; set; }
-    public Listing? Listing { get; set; }
 
     [Column(TypeName = "jsonb")]
     public string? OldData { get; private set; }

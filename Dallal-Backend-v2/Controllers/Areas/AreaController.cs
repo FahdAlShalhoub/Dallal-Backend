@@ -1,14 +1,13 @@
-using Dallal_Backend_v2.Controllers;
 using Dallal_Backend_v2.Controllers.Areas.Dtos;
 using Dallal_Backend_v2.Controllers.Common.Dtos;
-using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Helpers.EntityDtoMappers;
+using Dallal_Backend_v2.Repositories.Areas;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Controllers.Areas;
 
 [Route("areas")]
-public class AreaController(DatabaseContext _context) : DallalController
+public class AreaController(IAreaRepository _areaRepository) : DallalController
 {
     // list paginated areas
     [HttpGet]
@@ -18,48 +17,13 @@ public class AreaController(DatabaseContext _context) : DallalController
         [FromQuery] int pageSize = 10
     )
     {
-        var areas = await _context
-            .Areas.Include(a => a.Parent)
-            .Where(i =>
-                string.IsNullOrEmpty(search)
-                || ((string)i.Name).ToLower().Contains(search.ToLower())
-            )
-            .OrderBy(a => a.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        var count = await _context
-            .Areas.Include(a => a.Parent)
-            .Where(i =>
-                string.IsNullOrEmpty(search)
-                || ((string)i.Name).ToLower().Contains(search.ToLower())
-            )
-            .CountAsync();
+        var result = await _areaRepository.GetPaginatedAreasWithParentAsync(page, pageSize, search);
 
         return new PaginatedList<AreaDto>(
-            areas
-                .Select(i => new AreaDto()
-                {
-                    Id = i.Id,
-                    Name = new LocalizedStringDto(i.Name),
-                    FullName = new LocalizedStringDto(i.FullName),
-                    Parent =
-                        i.Parent != null
-                            ? new AreaDto
-                            {
-                                Id = i.Parent.Id,
-                                Name = new LocalizedStringDto(i.Parent.Name),
-                                FullName = new LocalizedStringDto(i.Parent.FullName),
-                                CreatedAt = i.Parent.CreatedAt,
-                            }
-                            : null,
-                    CreatedAt = i.CreatedAt,
-                })
-                .ToList(),
+            AreaMapper.ToDto(result.Items),
             page,
             pageSize,
-            count
+            (int)result.Count
         );
     }
 
@@ -71,36 +35,8 @@ public class AreaController(DatabaseContext _context) : DallalController
         [FromQuery] int pageSize = 10
     )
     {
-        var areas = await _context
-            .Areas.Include(a => a.Parent)
-            .Where(i =>
-                string.IsNullOrEmpty(search)
-                || ((string)i.FullName).ToLower().Contains(search.ToLower())
-            )
-            .Where(a => a.Children.Count == 0) // only leaf areas
-            .OrderBy(a => a.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var areas = await _areaRepository.GetLeafAreasAsync(page, pageSize, search);
 
-        return areas
-            .Select(a => new AreaDto
-            {
-                Id = a.Id,
-                Name = new LocalizedStringDto(a.Name),
-                FullName = new LocalizedStringDto(a.FullName),
-                Parent =
-                    a.Parent != null
-                        ? new AreaDto
-                        {
-                            Id = a.Parent.Id,
-                            Name = new LocalizedStringDto(a.Parent.Name),
-                            FullName = new LocalizedStringDto(a.Parent.FullName),
-                            CreatedAt = a.Parent.CreatedAt,
-                        }
-                        : null,
-                CreatedAt = a.CreatedAt,
-            })
-            .ToList();
+        return AreaMapper.ToDto(areas);
     }
 }

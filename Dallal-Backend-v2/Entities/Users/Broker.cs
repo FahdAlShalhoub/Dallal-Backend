@@ -5,7 +5,7 @@ using Dallal_Backend_v2.Helpers;
 
 namespace Dallal_Backend_v2.Entities.Users;
 
-public class Broker
+public class Broker : BaseEntity
 {
     private Broker() { }
 
@@ -13,8 +13,6 @@ public class Broker
     {
         Id = id;
     }
-
-    public Guid Id { get; set; }
 
     [DoNotIncludeInSubmission]
     public User User { get; set; } = default!;
