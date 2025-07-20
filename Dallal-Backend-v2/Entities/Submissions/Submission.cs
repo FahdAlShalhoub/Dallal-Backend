@@ -5,7 +5,7 @@ using Dallal_Backend_v2.Services;
 
 namespace Dallal_Backend_v2.Entities.Submissions;
 
-public class Submission
+public class Submission : BaseEntity
 {
     public static readonly JsonSerializerOptions s_jsonOptions = CreateJsonOptions();
 
@@ -16,9 +16,6 @@ public class Submission
         _jsonOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         return _jsonOptions;
     }
-
-    public Guid Id { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public SubmissionType Type { get; set; }
 

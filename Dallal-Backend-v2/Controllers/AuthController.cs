@@ -6,12 +6,12 @@ using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Repositories.Users;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Controllers;
 
@@ -20,7 +20,7 @@ namespace Dallal_Backend_v2.Controllers;
 public class AuthController(
     FirebaseTokenVerifier _firebaseTokenVerifier,
     JwtService _jwtService,
-    DatabaseContext _context,
+    IUserRepository _userRepository,
     IConfiguration _configuration,
     S3 _s3Service
 ) : DallalController
@@ -70,20 +70,11 @@ public class AuthController(
         bool validatePassword = true
     )
     {
-        var existingUser = await _context
-            .Users.Include(i => i.Buyer)
-            .Include(i => i.Broker)
-            .Include(i => i.Admin)
-            .SingleOrDefaultAsync(x => x.Email == email);
+        var existingUser = await _userRepository.GetUserByEmailWithRolesAsync(email);
 
         // Handle default values for first and last name
         string? firstName = givenName?.Trim();
         string? lastName = familyName?.Trim();
-
-        // if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
-        // {
-        //     // firstName = email; // Use email as default if no name provided
-        // }
 
         if (existingUser is null)
         {
@@ -103,7 +94,7 @@ public class AuthController(
                 LoginAttempts = 0,
                 LockoutUntil = null,
             };
-            _context.Users.Add(existingUser);
+            await _userRepository.AddAsync(existingUser);
         }
         else if (validatePassword)
         {
@@ -123,7 +114,6 @@ public class AuthController(
                     return existingUser;
                 var buyer = new Buyer(existingUser.Id);
                 existingUser.AddBuyer(buyer);
-                await _context.SaveChangesAsync();
                 return existingUser;
             }
             case UserType.Broker:
@@ -132,7 +122,6 @@ public class AuthController(
                     return existingUser;
                 var broker = new Broker(existingUser.Id) { Status = BrokerStatus.MissingData };
                 existingUser.AddBroker(broker);
-                await _context.SaveChangesAsync();
                 return existingUser;
             }
             case UserType.Admin:
@@ -151,7 +140,7 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<AuthenticatedUserDto> Login([FromBody] LoginRequest request)
     {
-        var user = await _context.Users.SingleOrDefaultAsync(buyer => buyer.Email == request.Email);
+        var user = await _userRepository.GetByEmailAsync(request.Email);
 
         if (user == null)
             throw new UnauthorizedAccessException("Invalid Email or Password");
@@ -167,7 +156,7 @@ public class AuthController(
 
         user.LoginAttempts = 0;
         user.LockoutUntil = null;
-        await _context.SaveChangesAsync();
+        await _userRepository.UpdateAsync(user);
 
         return await CreateToken(user);
     }
@@ -205,11 +194,7 @@ public class AuthController(
     public async Task<AuthenticatedUserDto> AuthorizedSignup(UserType userType)
     {
         var userId = UserId;
-        var user = await _context
-            .Users.Include(u => u.Buyer)
-            .Include(u => u.Broker)
-            .Include(u => u.Admin)
-            .FirstAsync(u => u.Id == userId);
+        var user = await _userRepository.GetUserByIdWithRolesAsync(userId);
 
         await CreateSubProfile(userType, user);
         return await CreateToken(user);
@@ -227,7 +212,7 @@ public class AuthController(
         }
 
         var user =
-            await _context.Users.FirstAsync(i => i.Id == UserId)
+            await _userRepository.GetUserByIdAsync(UserId)
             ?? throw new Exception("User not found");
 
         if (request.Language != null)
@@ -239,7 +224,7 @@ public class AuthController(
         if (request.LastName != null)
             user.LastName = request.LastName;
 
-        await _context.SaveChangesAsync();
+        await _userRepository.UpdateAsync(user);
         return await GenerateUserInfoDto(user);
     }
 
@@ -292,7 +277,7 @@ public class AuthController(
             {
                 user.LockoutUntil = DateTime.UtcNow.AddMinutes(15);
             }
-            await _context.SaveChangesAsync();
+            await _userRepository.UpdateAsync(user);
             throw new UnauthorizedAccessException("Invalid Email or Password");
         }
     }

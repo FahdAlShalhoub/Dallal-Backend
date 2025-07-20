@@ -3,7 +3,17 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Middleware;
 using Dallal_Backend_v2.OpenApi;
+using Dallal_Backend_v2.Repositories;
+using Dallal_Backend_v2.Repositories.Areas;
+using Dallal_Backend_v2.Repositories.Brokers;
+using Dallal_Backend_v2.Repositories.Buyers;
+using Dallal_Backend_v2.Repositories.Details;
+using Dallal_Backend_v2.Repositories.Listings;
+using Dallal_Backend_v2.Repositories.ListingViews;
+using Dallal_Backend_v2.Repositories.Submissions;
+using Dallal_Backend_v2.Repositories.Users;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -76,6 +86,17 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     Trace.Assert(!string.IsNullOrEmpty(accessKeyId), "S3 access key id not found");
     builder.Services.AddSingleton(new S3(containerName, region, secretAccessKey, accessKeyId));
 
+    // Register repositories
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IBrokerRepository, BrokerRepository>();
+    builder.Services.AddScoped<IListingRepository, ListingRepository>();
+    builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+    builder.Services.AddScoped<IAreaRepository, AreaRepository>();
+    builder.Services.AddScoped<IListingViewRepository, ListingViewRepository>();
+    builder.Services.AddScoped<IDetailsDefinitionRepository, DetailsDefinitionRepository>();
+    builder.Services.AddScoped<IBuyerRepository, BuyerRepository>();
+
+    // Register services
     builder.Services.AddScoped<SubmissionService>();
     builder.Services.AddScoped<OtpService>();
     builder.Services.AddScoped<ListingViewService>();
@@ -238,6 +259,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
+app.UseMiddleware<TransactionMiddleware>();
 app.UseMiddleware<RequestLocalizationMiddleware>();
 
 app.UseAuthentication();

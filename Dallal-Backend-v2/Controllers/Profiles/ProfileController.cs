@@ -3,22 +3,23 @@ using Dallal_Backend_v2.Controllers.Profiles.Dtos;
 using Dallal_Backend_v2.Entities;
 using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
+using Dallal_Backend_v2.Repositories;
+using Dallal_Backend_v2.Repositories.Users;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dallal_Backend_v2.Controllers.Profiles;
 
 [Route("[controller]")]
 [Authorize]
-public class ProfileController(DatabaseContext _context, S3 _s3Service) : DallalController
+public class ProfileController(IUserRepository _userRepository, S3 _s3Service) : DallalController
 {
     [HttpPut("update")]
     public async Task<UserInfoDto> UpdateProfile([FromBody] UpdateProfileProfileRequest request)
     {
         var userId = UserId;
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userRepository.FindAsync(userId);
 
         if (user == null)
             throw new EntityNotFoundException(typeof(User), userId);
@@ -37,7 +38,7 @@ public class ProfileController(DatabaseContext _context, S3 _s3Service) : Dallal
         user.PreferredLanguage = Thread.CurrentThread.CurrentCulture.Name;
 
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _userRepository.UpdateAsync(user);
 
         return new UserInfoDto
         {

@@ -21,7 +21,7 @@ public class ListingDto
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public decimal PricePerYear { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
-    public CoordinateDto Location { get; set; }
+    public CoordinateDto Location { get; set; } = default!;
     public bool IsFavorite { get; set; }
     public bool IsViewed { get; set; }
     public List<DocumentDto> Images { get; set; } = [];

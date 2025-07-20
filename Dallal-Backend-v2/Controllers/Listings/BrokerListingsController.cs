@@ -7,6 +7,11 @@ using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Entities.Submissions;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Helpers.EntityDtoMappers;
+using Dallal_Backend_v2.Repositories.Areas;
+using Dallal_Backend_v2.Repositories.Brokers;
+using Dallal_Backend_v2.Repositories.Details;
+using Dallal_Backend_v2.Repositories.Listings;
+using Dallal_Backend_v2.Repositories.Submissions;
 using Dallal_Backend_v2.Services;
 using Dallal_Backend_v2.ThirdParty;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +25,12 @@ namespace Dallal_Backend_v2.Controllers;
 [Route("listings")]
 [Authorize(Roles = "Broker")]
 public class BrokerListingsController(
-    DatabaseContext _context,
+    IListingRepository _listingRepository,
+    ISubmissionRepository _submissionRepository,
+    IDetailsDefinitionRepository _detailsDefinitionRepository,
+    IAreaRepository _areaRepository,
+    IBrokerRepository _brokerRepository,
+    DatabaseContext _context, // TODO: Remove when ListingMapper.MapToDto is refactored to use repositories
     SubmissionService _submissionService,
     S3 _s3Service
 ) : DallalController
@@ -45,7 +55,9 @@ public class BrokerListingsController(
     [HttpPut("{id}")]
     public async Task UpdateListing(Guid id, [FromBody] CreateEditListingDto listingDto)
     {
-        var listing = await _context.Listings.Include(i => i.Details).FirstAsync(i => i.Id == id);
+        var listing = await _listingRepository.GetListingWithDetailsAsync(id);
+        if (listing == null)
+            throw new EntityNotFoundException(typeof(Listing), id);
 
         await ValidateDetails(listingDto.Details, listingDto.PropertyType);
 
@@ -115,20 +127,13 @@ public class BrokerListingsController(
             newListing
         );
 
-        await _context.SaveChangesAsync();
     }
 
     private async Task ValidateDetails(List<DetailsDto> details, PropertyType propertyType)
     {
-        var definitions = await _context
-            .DetailsDefinitions.Where(d => !d.IsHidden)
-            .Include(d => d.Options)
-            .Where(d =>
-                d.PropertyTypes!.Count == 0
-                || d.PropertyTypes == null
-                || d.PropertyTypes.Contains(propertyType)
-            )
-            .ToListAsync();
+        var definitions = await _detailsDefinitionRepository.GetDefinitionsForPropertyTypeAsync(
+            propertyType
+        );
 
         foreach (var inputDetail in details)
         {
@@ -193,9 +198,7 @@ public class BrokerListingsController(
             }
         }
 
-        var requiredDefinitions = await _context
-            .DetailsDefinitions.Where(d => d.IsRequired)
-            .ToListAsync();
+        var requiredDefinitions = await _detailsDefinitionRepository.GetRequiredDefinitionsAsync();
 
         foreach (var requiredDefinition in requiredDefinitions)
         {
@@ -255,25 +258,24 @@ public class BrokerListingsController(
         return new PaginatedList<ListingDto>([.. dtos], page, totalCount, pageSize);
     }
 
-    private async Task<(
-        List<ListingQueryDto> listings,
-        int totalCount
-    )> GetMyListingsFromListings(int page, int pageSize, ListingStatus status)
+    private async Task<(List<ListingQueryDto> listings, int totalCount)> GetMyListingsFromListings(
+        int page,
+        int pageSize,
+        ListingStatus status
+    )
     {
-        IQueryable<Listing> query = _context
-            .Listings.AsQueryable()
-            .Where(l => l.BrokerId == UserId)
-            .Where(l => l.Status == status);
+        var result = await _listingRepository.GetBrokerListingsPaginatedAsync(
+            UserId,
+            status,
+            page,
+            pageSize
+        );
 
-        var listings = await query
-            .OrderByDescending(l => l.CreatedAt)
-            .Select(ListingMapper.SelectToQueryDto(null))
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var listings = result
+            .Items.Select(l => ListingMapper.SelectToQueryDto(null).Compile()(l))
+            .ToList();
 
-        var totalCount = await query.CountAsync();
-        return (listings, totalCount);
+        return (listings, (int)result.Count);
     }
 
     private async Task<(
@@ -281,37 +283,28 @@ public class BrokerListingsController(
         int totalCount
     )> GetMyListingsFromSubmissions(int page, int pageSize, SubmissionStatus status)
     {
-        var query = _context
-            .Submissions.AsQueryable()
-            .Where(s => s.Type == SubmissionType.Listing && s.Status == status);
+        var result = await _submissionRepository.GetSubmissionsByTypeAndStatusAsync(
+            SubmissionType.Listing,
+            status,
+            page,
+            pageSize
+        );
 
-        var submissions = await query
-            .OrderByDescending(l => l.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var existingListings = await _listingRepository.GetListingsByIdsWithDetailsAsync(
+            result.Items.Select(s => s.ReferenceId).ToList()
+        );
 
-        var existingListings = await _context
-            .Listings.Where(l => submissions.Select(s => s.ReferenceId).Contains(l.Id))
-            .Include(l => l.Details)
-            .ToDictionaryAsync(i => i.Id);
-
-        var listings = submissions
-            .Select(s => s.GetNewValue<Listing>())
+        var listings = result
+            .Items.Select(s => s.GetNewValue<Listing>())
             .Where(l => l != null)
             .Cast<Listing>()
             .ToList();
 
-        var areasIds = listings.Select(l => l.AreaId).Distinct();
-        var brokerIds = listings.Select(l => l.BrokerId).Distinct();
+        var areasIds = listings.Select(l => l.AreaId).Distinct().ToList();
+        var brokerIds = listings.Select(l => l.BrokerId).Distinct().ToList();
 
-        var areas = await _context
-            .Areas.Where(a => areasIds.Contains(a.Id))
-            .ToDictionaryAsync(a => a.Id);
-        var brokers = await _context
-            .Brokers.Where(b => brokerIds.Contains(b.Id))
-            .Include(b => b.User)
-            .ToDictionaryAsync(b => b.Id);
+        var areas = await _areaRepository.GetAreasByIdsAsync(areasIds);
+        var brokers = await _brokerRepository.GetBrokersByIdsWithUserAsync(brokerIds);
 
         foreach (var listing in listings)
         {
@@ -321,19 +314,20 @@ public class BrokerListingsController(
 
         var compiled = ListingMapper.SelectToQueryDto(null).Compile();
 
-        var totalCount = await query.CountAsync();
-        return (listings.Select(compiled).ToList(), totalCount);
+        return (listings.Select(compiled).ToList(), (int)result.Count);
     }
 
     [HttpGet("my-listing/{id}")]
     public async Task<ListingDetailedDto?> GetListing(Guid id)
     {
-        var existingListing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
+        var existingListing = await _listingRepository.FindAsync(id);
 
-        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
-            s.Type == SubmissionType.Listing && s.ReferenceId == id
+        var submission = await _submissionRepository.GetSubmissionByTypeAndReferenceIdAsync(
+            SubmissionType.Listing,
+            id
         );
 
+        // TODO: Refactor ListingMapper.MapToDto to use repositories instead of DatabaseContext
         var dto = await ListingMapper.MapToDto(
             submission?.GetNewValue<Listing>() ?? existingListing,
             _context,
@@ -351,7 +345,7 @@ public class BrokerListingsController(
     [HttpPost("my-listing/{id}/cancel")]
     public async Task CancelListingSubmission(Guid id)
     {
-        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+        var submission = await _submissionRepository.FirstOrDefaultAsync(s =>
             s.Type == SubmissionType.Listing
             && s.ReferenceId == id
             && s.Status == SubmissionStatus.Pending
@@ -372,7 +366,7 @@ public class BrokerListingsController(
     [HttpPost("my-listing/{id}/republish")]
     public async Task RepublishListingSubmission(Guid id)
     {
-        var submission = await _context.Submissions.FirstOrDefaultAsync(s =>
+        var submission = await _submissionRepository.FirstOrDefaultAsync(s =>
             s.Type == SubmissionType.Listing
             && s.ReferenceId == id
             && s.Status == SubmissionStatus.Cancelled
@@ -388,13 +382,12 @@ public class BrokerListingsController(
             );
 
         submission.Status = SubmissionStatus.Pending;
-        await _context.SaveChangesAsync();
     }
 
     [HttpPost("my-listing/{id}/archive")]
     public async Task ArchiveListing(Guid id)
     {
-        var listing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
+        var listing = await _listingRepository.FindAsync(id);
 
         if (listing == null)
             throw new EntityNotFoundException(typeof(Listing), id);
@@ -407,15 +400,13 @@ public class BrokerListingsController(
         if (listing.Status != ListingStatus.Active)
             throw new InvalidOperationException("Only active listings can be archived.");
 
-        listing.Status = ListingStatus.Archived;
-        listing.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _listingRepository.ArchiveListingAsync(id);
     }
 
     [HttpPost("my-listing/{id}/unarchive")]
     public async Task UnarchiveListing(Guid id)
     {
-        var listing = await _context.Listings.FirstOrDefaultAsync(l => l.Id == id);
+        var listing = await _listingRepository.FindAsync(id);
 
         if (listing == null)
             throw new EntityNotFoundException(typeof(Listing), id);
@@ -428,9 +419,7 @@ public class BrokerListingsController(
         if (listing.Status != ListingStatus.Archived)
             throw new InvalidOperationException("Only archived listings can be unarchived.");
 
-        listing.Status = ListingStatus.Active;
-        listing.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        await _listingRepository.UnarchiveListingAsync(id);
     }
 }
 

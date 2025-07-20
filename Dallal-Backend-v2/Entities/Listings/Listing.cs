@@ -9,13 +9,12 @@ using NetTopologySuite.IO.Converters;
 
 namespace Dallal_Backend_v2.Entities;
 
-public class Listing
+public class Listing : BaseEntity
 {
-    public Guid Id { get; set; }
     public Guid BrokerId { get; set; }
 
     [DoNotIncludeInSubmission]
-    public Broker Broker { get; set; }
+    public Broker Broker { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
     public Guid AreaId { get; set; }
@@ -26,11 +25,10 @@ public class Listing
     public int BathroomCount { get; set; }
     public decimal AreaInMetersSq { get; set; }
     public ListingType ListingType { get; set; }
+    public ListingType Type { get; set; }
     public PropertyType PropertyType { get; set; }
     public RentalContractPeriod? RentalContractPeriod { get; set; }
     public List<ListingDetail> Details { get; set; } = default!;
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
 
     [Column(TypeName = "geometry (point)")]
     [JsonConverter(typeof(GeoJsonConverterFactory))]

@@ -28,6 +28,6 @@ public record Document
     }
 
     public string? FileName { get; set; }
-    public string NameInBucket { get; set; }
+    public string NameInBucket { get; set; } = default!;
     public string? PlaceHolderNameInBucket { get; set; }
 }

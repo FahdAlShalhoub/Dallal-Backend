@@ -117,7 +117,6 @@ public class BrokerProfileController(
                 }
             );
         }
-        await _context.SaveChangesAsync();
     }
 
     [HttpPut("info")]
@@ -176,7 +175,6 @@ public class BrokerProfileController(
             user.AddBroker(newBroker);
         }
 
-        await _context.SaveChangesAsync();
         return new BrokerDto
         {
             Id = user.Id,

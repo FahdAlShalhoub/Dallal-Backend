@@ -1,6 +1,6 @@
 namespace Dallal_Backend_v2.Entities.Users;
 
-public class Buyer
+public class Buyer : BaseEntity
 {
     private Buyer() { }
 
@@ -8,7 +8,5 @@ public class Buyer
     {
         Id = id;
     }
-
-    public Guid Id { get; set; }
     public List<Listing> FavoriteListings { get; set; } = [];
 }

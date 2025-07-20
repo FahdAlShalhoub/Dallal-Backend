@@ -87,5 +87,30 @@ public class DatabaseContext : DbContext
         });
     }
 
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries();
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is not BaseEntity baseEntity)
+                continue;
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    baseEntity.CreatedAt = now;
+                    baseEntity.UpdatedAt = now;
+                    break;
+
+                case EntityState.Modified:
+                    baseEntity.UpdatedAt = now;
+                    break;
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
     public static Action<DbContext, bool> Seed() => DatabaseSeeder.Seed();
 }
