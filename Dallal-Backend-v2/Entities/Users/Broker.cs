@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Dallal_Backend_v2.Entities.Enums;
 using Dallal_Backend_v2.Helpers;
 
@@ -15,6 +16,7 @@ public class Broker : BaseEntity
     }
 
     [DoNotIncludeInSubmission]
+    [JsonIgnore]
     public User User { get; set; } = default!;
     public BrokerStatus Status { get; set; }
     public string? AgencyName { get; set; }

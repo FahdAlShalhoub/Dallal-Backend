@@ -63,7 +63,7 @@ public class AdminSubmissionController(
         {
             SubmissionType.BrokerAccount => await BrokerMapper.GetDtoFromSubmission(
                 await _context
-                    .Users.Where(u => u.Id == UserId && u.Broker != null)
+                    .Users.Where(u => u.Id == submission.ReferenceId && u.Broker != null)
                     .Include(u => u.Broker)
                     .FirstAsync(),
                 submission.GetOldValue<Broker>(),
@@ -81,7 +81,7 @@ public class AdminSubmissionController(
         {
             SubmissionType.BrokerAccount => await BrokerMapper.GetDtoFromSubmission(
                 await _context
-                    .Users.Where(u => u.Id == UserId && u.Broker != null)
+                    .Users.Where(u => u.Id == submission.ReferenceId && u.Broker != null)
                     .Include(u => u.Broker)
                     .FirstAsync(),
                 submission.GetNewValue<Broker>(),

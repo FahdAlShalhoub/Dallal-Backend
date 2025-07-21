@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
 using Dallal_Backend_v2;
+using Dallal_Backend_v2.Entities;
+using Dallal_Backend_v2.Entities.Users;
 using Dallal_Backend_v2.Exceptions;
 using Dallal_Backend_v2.Middleware;
 using Dallal_Backend_v2.OpenApi;
@@ -88,7 +90,9 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
 
     // Register repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IRepository<Broker>, BrokerRepository>();
     builder.Services.AddScoped<IBrokerRepository, BrokerRepository>();
+    builder.Services.AddScoped<IRepository<Listing>, ListingRepository>();
     builder.Services.AddScoped<IListingRepository, ListingRepository>();
     builder.Services.AddScoped<ISubmissionRepository, SubmissionRepository>();
     builder.Services.AddScoped<IAreaRepository, AreaRepository>();
@@ -119,7 +123,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
         .WriteTo.Console()
         .WriteTo.LokiHttp(new BasicAuthCredentials(lokiUrl, lokiUsername, lokiPassword))
         .CreateLogger();
-
+    
     builder.Host.UseSerilog();
 
     string? tempoUrl = builder.Configuration.GetRequiredSection("Tempo")["Uri"];
@@ -256,6 +260,7 @@ if (app.Environment.IsDevelopment())
     app.UseCors(options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 }
 
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
