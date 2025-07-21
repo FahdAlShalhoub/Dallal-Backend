@@ -24,7 +24,7 @@ public class AreaRepository(DatabaseContext context) : Repository<Area>(context)
         return await GetPaginatedAsync(
             page,
             pageSize,
-            predicate: area => string.IsNullOrEmpty(search) || ((string)area.Name).Contains(search),
+            predicate: area => string.IsNullOrEmpty(search) || ((string)area.Name).ToLower().Contains(search.ToLower()  ),
             include: query => query.Include(a => a.Parent)
         );
     }
@@ -34,7 +34,7 @@ public class AreaRepository(DatabaseContext context) : Repository<Area>(context)
         var query = _dbSet.AsQueryable();
 
         if (!string.IsNullOrEmpty(search))
-            query = query.Where(a => a.Name.Contains(search));
+            query = query.Where(a => ((string)a.Name).ToLower().Contains(search.ToLower()));
 
         return await query
             .Where(a => !_dbSet.Any(child => child.ParentId == a.Id))
