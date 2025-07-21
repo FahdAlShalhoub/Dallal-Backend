@@ -10,5 +10,4 @@ public interface IDetailsDefinitionRepository : IRepository<DetailsDefinition>
     Task<DetailsDefinition?> GetDefinitionWithOptionsAsync(Guid id);
     Task UpdateDefinitionWithOptionsAsync(Guid definitionId, UpdateDetailsDefinitionDto updateDto);
     Task<List<DetailsDefinition>> GetDefinitionsForPropertyTypeAsync(PropertyType propertyType);
-    Task<List<DetailsDefinition>> GetRequiredDefinitionsAsync();
 }

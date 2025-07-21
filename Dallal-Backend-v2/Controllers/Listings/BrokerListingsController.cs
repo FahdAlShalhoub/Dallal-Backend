@@ -135,6 +135,8 @@ public class BrokerListingsController(
             propertyType
         );
 
+        Console.WriteLine("Validating details..." + propertyType.ToString());
+
         foreach (var inputDetail in details)
         {
             var definition = definitions.FirstOrDefault(d => d.Id == inputDetail.DefinitionId);
@@ -198,7 +200,9 @@ public class BrokerListingsController(
             }
         }
 
-        var requiredDefinitions = await _detailsDefinitionRepository.GetRequiredDefinitionsAsync();
+        var requiredDefinitions = definitions
+            .Where(d => d.IsRequired)
+            .ToList();
 
         foreach (var requiredDefinition in requiredDefinitions)
         {

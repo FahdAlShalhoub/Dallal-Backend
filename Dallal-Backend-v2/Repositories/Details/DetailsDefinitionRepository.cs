@@ -65,11 +65,6 @@ public class DetailsDefinitionRepository
             .ToListAsync();
     }
 
-    public async Task<List<DetailsDefinition>> GetRequiredDefinitionsAsync()
-    {
-        return await _dbSet.Where(d => d.IsRequired).ToListAsync();
-    }
-
     private async Task UpdateOptionsDirectlyAsync(
         Guid definitionId,
         List<UpdateDetailsDefinitionOptionDto> incomingOptions
