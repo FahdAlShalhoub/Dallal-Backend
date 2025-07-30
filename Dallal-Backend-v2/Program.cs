@@ -69,10 +69,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     builder.Services.AddSingleton(jwt);
     builder
         .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = jwt.GetTokenValidationParameters();
-        });
+        .AddJwtBearer(options => { options.TokenValidationParameters = jwt.GetTokenValidationParameters(); });
 
     string? firebaseAuth = builder.Configuration.GetRequiredSection("Firebase")["ServiceAccount"];
     Trace.Assert(!string.IsNullOrEmpty(firebaseAuth), "Firebase Service Account not found");
@@ -123,7 +120,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
         .WriteTo.Console()
         .WriteTo.LokiHttp(new BasicAuthCredentials(lokiUrl, lokiUsername, lokiPassword))
         .CreateLogger();
-    
+
     builder.Host.UseSerilog();
 
     string? tempoUrl = builder.Configuration.GetRequiredSection("Tempo")["Uri"];
@@ -132,6 +129,9 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
     Trace.Assert(!string.IsNullOrEmpty(tempoUsername), "Tempo username not found");
     string? tempoPassword = builder.Configuration.GetRequiredSection("Tempo")["Password"];
     Trace.Assert(!string.IsNullOrEmpty(tempoPassword), "Tempo Password not found");
+
+    string? sentryDsn = builder.Configuration.GetRequiredSection("Sentry")["DSN"];
+    Trace.Assert(!string.IsNullOrEmpty(sentryDsn), "Sentry DSN not found");
 
     builder
         .Services.AddOpenTelemetry()
@@ -159,8 +159,8 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                         // Filter out health check and static file requests
                         var path = httpContext.Request.Path.Value;
                         return !path?.Contains("health") == true
-                            && !path?.Contains("swagger") == true
-                            && !path?.Contains("scalar") == true;
+                               && !path?.Contains("swagger") == true
+                               && !path?.Contains("scalar") == true;
                     };
                 })
                 // Add HTTP client instrumentation
@@ -179,7 +179,7 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                     {
                         activity.SetTag(
                             "http.response.status_code",
-                            (int)httpResponseMessage.StatusCode
+                            (int) httpResponseMessage.StatusCode
                         );
                     };
                 })
@@ -225,6 +225,12 @@ if (Environment.GetEnvironmentVariable("EF_BUNDLE_EXECUTION") != "true")
                 });
         });
 
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+        options.Debug = true;
+    });
+
     string? twilioAccountSid = builder.Configuration.GetRequiredSection("Twilio")["AccountSid"];
     Trace.Assert(!string.IsNullOrEmpty(twilioAccountSid), "Twilio Account SID not found");
     string? twilioAuthToken = builder.Configuration.GetRequiredSection("Twilio")["AuthToken"];
@@ -252,6 +258,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -277,4 +284,6 @@ else
 
 app.Run();
 
-public partial class Program { }
+public partial class Program
+{
+}
